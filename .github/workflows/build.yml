@@ -48,6 +48,7 @@ jobs:
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
+          location: 'C:\msys64'
           update: true
           install: make mingw-w64-ucrt-x86_64-gcc
       - name: Build hactool
@@ -86,7 +87,7 @@ jobs:
             libsamplerate0-dev libudev-dev libvulkan-dev libvpx-dev libwayland-dev \
             libx11-dev libxcursor-dev libxext-dev libxfixes-dev libxi-dev \
             libxinerama-dev libxkbcommon-dev libxrandr-dev libxss-dev \
-            libxxf86vm-dev libzstd-dev libclang-rt-18-dev
+            libxxf86vm-dev libxtst-dev libzstd-dev libclang-rt-18-dev
       - name: Build Linux AppImage
         run: python tools/make_appimage.py
       - name: Upload Linux release files

@@ -6,7 +6,8 @@
 - Bumped Windows and Linux launcher metadata to 0.4.6, updated the current download guides, added `docs/releases/0.4.6.md`, and replaced the placeholder workflow with Windows/Linux builds, checks, SHA-256 files, and a draft-only release step.
 - The workflow creates or refreshes a draft only for a pushed `0.4.6` tag. The Windows executable remains unsigned; the draft must stay unpublished until its exact artifact is reviewed by the antivirus vendor and RecompLauncher.
 - Excluded local `.githooks` copies and generated `tools/xlate/bin`/`obj` files from the Windows payload. Content, launcher, extraction, RomFS, and phase-report checks pass locally. The lifter test is Linux-only and will run in the Ubuntu workflow.
-- Next: run the staged content check, push the source to `main`, push the new `0.4.6` tag, and confirm the Actions build and draft release before any publication.
+- The first `0.4.6` Actions run passed validation but both platform builds failed: MSYS2 installed in a temporary directory instead of `C:\msys64`, and SDL's configure step needs `libxtst-dev`. The workflow fixes are on `main`; no draft release was created.
+- Next: after approval, move only the newly created, unpublished `0.4.6` tag to the workflow-fix commit, rerun Actions, and keep the resulting draft unpublished pending review.
 
 ## Publishing the 0.4.5 release notes (2026-11-21)
 

@@ -8,8 +8,10 @@
 - Excluded local `.githooks` copies and generated `tools/xlate/bin`/`obj` files from the Windows payload. Content, launcher, extraction, RomFS, and phase-report checks pass locally. The lifter test is Linux-only and will run in the Ubuntu workflow.
 - The first `0.4.6` Actions run passed validation but both platform builds failed: MSYS2 was installed in a temporary directory instead of `C:\msys64`, and SDL's configure step needed `libxtst-dev`. The first workflow fixes were pushed to `main`, and the unpublished `0.4.6` tag was moved to that fix.
 - The rerun (`44926255045`) passed validation and the Linux AppImage build. Windows hactool still failed with exit 127: the action installed MSYS2 under `D:\a\_temp\setup-msys2`, while the build helper invoked `C:\msys64\usr\bin\bash.exe`, which did not contain the installed compiler tools. No draft was created.
-- Updated the workflow and `tools/build_hactool.py` to pass the setup action's actual `msys2-location` output to the builder. The builder now prints captured make output on failure. A local path-resolution check passed; the fix has not yet been pushed or run in Actions.
-- Next: commit and push this fix, then get approval before moving the unpublished `0.4.6` tag again. Keep the resulting draft unpublished pending antivirus and RecompLauncher review.
+- Updated the workflow and `tools/build_hactool.py` to pass the setup action's actual `msys2-location` output to the builder. The builder now prints captured make output on failure. A local path-resolution check and `python tools/check_content.py --staged` passed.
+- Pushed commit `b64aedd` to `main`, then, with approval, moved only the unpublished `0.4.6` tag to it. Run `44926916739` passed validation, both platform builds, both artifact uploads, and draft creation. The Windows hactool, shader translator, and launcher steps all succeeded.
+- The draft has the Windows x64 launcher and checksum plus the Linux x86-64 AppImage and checksum. The published 0.4.5 release/tag is unchanged; 0.4.6 remains a draft.
+- Next: review the draft assets and checksums, scan the exact Windows executable, and complete antivirus vendor and RecompLauncher review. Do not publish until those checks are clear.
 
 ## Publishing the 0.4.5 release notes (2026-11-21)
 

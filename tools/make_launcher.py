@@ -35,7 +35,9 @@ def repo_files():
         if not manifest.is_file():
             raise RuntimeError('git metadata and build/source-files.json are both missing')
         names = json.loads(manifest.read_text(encoding='utf-8-sig'))
-    return [n for n in names if not n.startswith(('launcher/', '.github/', '.staging/')) and (ROOT / n).is_file()]
+    excluded = ('launcher/', '.github/', '.staging/', '.githooks/docs/', '.githooks/licenses/',
+                'tools/xlate/bin/', 'tools/xlate/obj/')
+    return [n for n in names if not n.startswith(excluded) and (ROOT / n).is_file()]
 
 
 def main():

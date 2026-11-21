@@ -58,11 +58,11 @@ static class SelfCheck
             if (Environment.GetEnvironmentVariable("APPDIR") is { Length: > 0 } appDir)
                 Check(File.Exists(Path.Combine(appDir, "recomplauncher.json")),
                     "RecompLauncher manifest at AppImage root");
-            Check(Updates.IsSupportedAppImageAsset("PokiNative-0.4.4-linux-x86_64.AppImage"),
+            Check(Updates.IsSupportedAppImageAsset("PokiNative-0.4.6-linux-x86_64.AppImage"),
                 "PokiNative Linux AppImage release assets are recognized");
             Check(Updates.IsSupportedAppImageAsset("KarPur-Linux-Launcher-0.4.2.AppImage"),
                 "legacy KarPur Linux AppImage assets remain recognized");
-            Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.4-Windows-x64.zip"),
+            Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.6-Windows-x64.zip"),
                 "non-AppImage release assets are ignored");
             Check(Install.Game(root).EndsWith(Path.Combine("build", "game", "karpur")), "native executable path");
             Check(Install.StartInfo(root).WorkingDirectory == root && Install.StartInfo(root).FileName == Install.Game(root), "native launch path and working directory");
@@ -114,7 +114,7 @@ static class SelfCheck
                 Install.PinLauncher(pinned, [1, 2, 3]);
                 Check(File.ReadAllText(installed) == "synthetic AppImage" &&
                     File.ReadAllText(Path.Combine(pinned, ".karpur-linux-launcher-version")) == Program.BuildRevision,
-                    "0.4.4 release replaces the obsolete 0.3.8.10 Deck launcher");
+                    "0.4.6 release replaces the obsolete 0.3.8.10 Deck launcher");
                 File.WriteAllText(installed, "newer launcher");
                 File.WriteAllText(Path.Combine(pinned, ".karpur-linux-launcher-version"), "99.0.0");
                 Install.PinLauncher(pinned, [1, 2, 3]);

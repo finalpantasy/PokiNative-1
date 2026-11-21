@@ -1,8 +1,8 @@
 # PokiNative Launcher for Linux
 
-This separate Linux launcher uses Avalonia and is built as `KarPur-Launcher-Linux-x86_64.AppImage`. For the 0.4.2 build on Steam Deck, use `KarPur-Linux-Launcher-0.4.2.AppImage`. Only the AppImage needs to be transferred. A complete folder package is also available as `KarPur-Launcher-Linux-x86_64.tar.gz`.
+This separate Linux launcher uses Avalonia. The 0.4.6 release uses one x86-64 AppImage, `PokiNative-0.4.6-linux-x86_64.AppImage`, for desktop Linux and Steam Deck; there is no separate Deck binary. A local build also creates a complete folder archive for testing, but the release publishes only the AppImage and its SHA-256 file.
 
-The launcher builds and repairs the native Linux game from your own dumps, starts an existing installation, manages graphics settings and saves, and shows the build log. Home uses the existing edition artwork and logos. The 0.4.2 build has an English interface and separate Controls and Update pages.
+The launcher builds and repairs the native Linux game from your own dumps, starts an existing installation, manages graphics settings and saves, and shows the build log. Home uses the existing edition artwork and logos. The interface includes separate Controls, Update, Saves, and Settings pages.
 
 **Experimental:** Trees and other scenery can be missing on Steam Deck, and performance can vary. Home links to GitHub Issues and pull requests. Reports from people familiar with Linux and Vulkan are especially helpful when they include the device, graphics driver, and logs.
 
@@ -11,21 +11,21 @@ The launcher builds and repairs the native Linux game from your own dumps, start
 This release requires x86-64 Linux with glibc 2.38 or newer, such as Ubuntu 24.04 or newer. The minimum comes from the bundled SDL3 library. Make the AppImage executable:
 
 ```sh
-chmod +x KarPur-Linux-Launcher-0.4.2.AppImage
+chmod +x PokiNative-0.4.6-linux-x86_64.AppImage
 ```
 
 Then start it:
 
 ```sh
-./KarPur-Linux-Launcher-0.4.2.AppImage
+./PokiNative-0.4.6-linux-x86_64.AppImage
 ```
 
-If you use the folder package, extract the entire archive and start `linux-x64/KarPur-Launcher-Linux`. Keep `linux-x64/payload.zip` beside the executable. A launcher copied on its own from `bin/Release` cannot install the game.
+Developers testing a locally built folder package should extract the entire archive and start `linux-x64/KarPur-Launcher-Linux`. Keep `linux-x64/payload.zip` beside the executable. A launcher copied on its own from `bin/Release` cannot install the game. The folder archive is not a separate public release download.
 
 If your system cannot mount AppImages with FUSE, use the extraction fallback:
 
 ```sh
-./KarPur-Linux-Launcher-0.4.2.AppImage --appimage-extract-and-run
+./PokiNative-0.4.6-linux-x86_64.AppImage --appimage-extract-and-run
 ```
 
 ## Set up the game
@@ -52,13 +52,9 @@ The **Controls** page can disable the preset and change stick and camera options
 
 **Update** checks public GitHub releases for a Linux AppImage. When one is available, the launcher can download it, verify its SHA-256 file when provided, and install a runnable copy in the game folder. Restart the launcher afterwards. Until a Linux AppImage is published, the page says so.
 
-## Add Linux to the 0.4.2 release
+## 0.4.6 release status
 
-After the upstream maintainer accepts the 0.4.2 changes and the final clean-install tests pass, create the `v0.4.2` release and add `KarPur-Linux-Launcher-0.4.2.AppImage` and its `.sha256` file alongside the Windows asset. Mark Linux support as experimental in the release notes and link to GitHub Issues and pull requests.
-
-On a Deck with an older test launcher, start the new AppImage directly once. When it opens an existing installation, it replaces the old desktop shortcut with this version.
-
-GitHub's automatic **Source code (zip/tar.gz)** archives reflect the commit tagged `v0.4.2`; the tag must be created only after the Linux and Windows source changes are committed.
+The `0.4.6` tag starts the GitHub Actions build. After checks pass, Actions creates a **draft** release with one Windows launcher, one Linux x86-64 AppImage, and their SHA-256 files. The draft stays unpublished until the Windows scan and RecompLauncher review are complete.
 
 ## Settings and saves
 
@@ -68,7 +64,7 @@ For a **new game**, leave Render scale at **1920×1080 through character creatio
 
 Settings has a separate **Keep hot memory active** compatibility switch. On writes `hot_cool = 0`; off restores the runtime's `hot_cool = 300` default. It is independent of the existing immediate GPU submission option. Keeping hot chunks active may reduce performance over longer play; Steam Deck gameplay has not been checked with this option.
 
-The 0.4.2 build carries forward optional **AMD FSR 2** and a separate window-sized output switch. Its Vulkan implementation and shaders are in the source payload; no separate FSR download is needed. Steam Deck gameplay with FSR 2 still needs testing.
+The launcher carries optional **AMD FSR 2** and a separate window-sized output switch. Its Vulkan implementation and shaders are in the source payload; no separate FSR download is needed. Steam Deck gameplay with FSR 2 still needs testing.
 
 Settings offers separate **Ambient occlusion** and **Indirect light** levels (0 off, 1–3 quality levels), both off by default. They add screen-space contact shadowing and a simple visible-colour bounce before the HUD, using host Vulkan images outside the game's unchanged pools. Linux gameplay and GPU performance remain untested.
 
@@ -89,7 +85,7 @@ python3 tools/make_appimage.py
 To put a test build outside the source tree and skip launching its built-in self-checks, pass an external output directory:
 
 ```sh
-python3 tools/make_appimage.py --out /mnt/c/Users/Admin/Downloads/KarPur-0.4.2-test/linux --skip-self-check
+python3 tools/make_appimage.py --out /mnt/c/Users/Admin/Downloads/PokiNative-0.4.6-test/linux --skip-self-check
 ```
 
 The script downloads pinned Python, SDL3, Zig, and AppImage components with SHA-256 verification, builds the native helper programs, and publishes the launcher with its .NET runtime. The AppImage, checksums, and complete folder package are written to `dist/linux` by default, or to the directory passed to `--out`. With `--out`, .NET intermediates also stay there. `--skip-self-check` avoids launching the built launcher or AppImage. The source package comes from the project's source file list. Game files, generated game code, and ordinary build outputs are excluded, except for explicitly required helper programs built for Linux.

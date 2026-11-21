@@ -92,10 +92,11 @@ def build_exes():
 def left_out(paths):
     """The paths of the list that tools/make_launcher.py would not put into payload.zip.
 
-    It packs what git tracks or would track, except everything under launcher/ and .github/ - the launcher's own
-    files are compiled or embedded into the executable instead (pins.json, the banners), so they belong there.
+    It excludes launcher files embedded in the executable, workflow/staging files, and local or generated build output.
     """
-    out = [p for p in paths if p.startswith(('launcher/', '.github/'))]
+    excluded = ('launcher/', '.github/', '.staging/', '.githooks/docs/', '.githooks/licenses/',
+                'tools/xlate/bin/', 'tools/xlate/obj/')
+    out = [p for p in paths if p.startswith(excluded)]
     if paths:
         r = subprocess.run(['git', 'check-ignore', '--stdin'], cwd=ROOT, input='\n'.join(paths),
                            capture_output=True, text=True)
@@ -157,6 +158,10 @@ def main():
     need = build_tools() + ['tools/data', 'tools/vendor', 'tools/requirements.txt', 'recomp/patches.py',
                             'recomp/gen.py', 'runtime/cfg.c', 'docs/launcher-checks.md']
     check('payload', left_out(need), f'{len(need)} files the launcher needs on the player\'s PC')
+    local_build_files = ['.githooks/docs/launcher.md', '.githooks/licenses/notice.txt',
+                         'tools/xlate/obj/Generated.cs', 'tools/xlate/bin/Generated.exe']
+    check('source package exclusions', [p for p in local_build_files if p not in left_out([p])],
+          'local documentation copies and generated .NET output stay out of launcher payloads')
 
     # Build properties that are wrong for a WinForms program the player types into.
     proj = (LAUNCHER / 'KarPurLauncher.csproj').read_text(encoding='utf-8')

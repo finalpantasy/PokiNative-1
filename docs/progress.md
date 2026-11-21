@@ -1,5 +1,13 @@
 # Progress
 
+## Preparing the 0.4.6 GitHub Actions draft (2026-11-21)
+
+- Kept the published 0.4.5 release and tag unchanged; no 0.4.6 tag existed when this work began.
+- Bumped Windows and Linux launcher metadata to 0.4.6, updated the current download guides, added `docs/releases/0.4.6.md`, and replaced the placeholder workflow with Windows/Linux builds, checks, SHA-256 files, and a draft-only release step.
+- The workflow creates or refreshes a draft only for a pushed `0.4.6` tag. The Windows executable remains unsigned; the draft must stay unpublished until its exact artifact is reviewed by the antivirus vendor and RecompLauncher.
+- Excluded local `.githooks` copies and generated `tools/xlate/bin`/`obj` files from the Windows payload. Content, launcher, extraction, RomFS, and phase-report checks pass locally. The lifter test is Linux-only and will run in the Ubuntu workflow.
+- Next: run the staged content check, push the source to `main`, push the new `0.4.6` tag, and confirm the Actions build and draft release before any publication.
+
 ## Publishing the 0.4.5 release notes (2026-11-21)
 
 - Added `docs/releases/0.4.5.md` with the platform-specific save paths, AMD recorder setting, setup validation, launcher/download updates, and unverified test limitations.

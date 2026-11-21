@@ -34,7 +34,7 @@ partial class MainForm
         backups.Margin = new Padding(0, 4, 10, 0);
         restore.Controls.AddRange(new Control[] { backups, restoreBackup });
         var backupTitle = Theme.Label("BACKUPS", 8.5f, muted: true, style: FontStyle.Bold);
-        var backupText = Theme.Label("KarPur keeps your last saves. Restoring one keeps the current save as a backup too.", 9.5f, muted: true);
+        var backupText = Theme.Label("PokiNative keeps your last saves. Restoring one keeps the current save as a backup too.", 9.5f, muted: true);
         backupText.Margin = new Padding(0, 4, 0, 8);
         saveNote.MaximumSize = new Size(700, 0);
 
@@ -178,7 +178,7 @@ partial class MainForm
             using (var zip = ZipFile.OpenRead(dlg.FileName))
                 if (!zip.Entries.Any(e => e.FullName.Equals("main", StringComparison.OrdinalIgnoreCase)))
                 {
-                    SaveMessage("This archive holds no save: a KarPur save archive has the file \"main\" at its top level.", true);
+                    SaveMessage("This archive holds no save: a PokiNative save archive has the file \"main\" at its top level.", true);
                     return;
                 }
             if (MessageBox.Show(this, "Replace your current save with this one? The current save is kept as a backup.", "Import save",

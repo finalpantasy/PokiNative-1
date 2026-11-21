@@ -49,10 +49,21 @@ static class SelfCheck
                     "toolchain/deps-linux/lib/libclang_rt.builtins-x86_64.a", "toolchain/deps-linux/lib/libvulkan.so",
                     "toolchain/deps-linux/lib/libSDL3.so.0" }.All(name => archive.GetEntry(name) != null),
                     "portable Linux build headers and libraries in payload");
+                Check(File.Exists(Path.Combine(Path.GetDirectoryName(payload)!, "recomplauncher.json")) ||
+                    archive.GetEntry("recomplauncher.json") != null, "RecompLauncher manifest in Linux package");
                 Check(!archive.Entries.Any(e => e.FullName.StartsWith("game/", StringComparison.Ordinal) ||
                     e.FullName.StartsWith("generated/", StringComparison.Ordinal) || e.FullName.EndsWith(".keys", StringComparison.OrdinalIgnoreCase)),
                     "payload excludes game data and keys");
             }
+            if (Environment.GetEnvironmentVariable("APPDIR") is { Length: > 0 } appDir)
+                Check(File.Exists(Path.Combine(appDir, "recomplauncher.json")),
+                    "RecompLauncher manifest at AppImage root");
+            Check(Updates.IsSupportedAppImageAsset("PokiNative-0.4.4-linux-x86_64.AppImage"),
+                "PokiNative Linux AppImage release assets are recognized");
+            Check(Updates.IsSupportedAppImageAsset("KarPur-Linux-Launcher-0.4.2.AppImage"),
+                "legacy KarPur Linux AppImage assets remain recognized");
+            Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.4-Windows-x64.zip"),
+                "non-AppImage release assets are ignored");
             Check(Install.Game(root).EndsWith(Path.Combine("build", "game", "karpur")), "native executable path");
             Check(Install.StartInfo(root).WorkingDirectory == root && Install.StartInfo(root).FileName == Install.Game(root), "native launch path and working directory");
             var start = Install.StartInfo(root);
@@ -61,6 +72,8 @@ static class SelfCheck
                 "native launch uses transferable game paths");
             Check(Install.StartInfo(root, true).Environment["KARPUR_DECK_CONTROLS"] == "1",
                 "Steam Deck launch enables the controller preset");
+            Install.MarkPrepared(root);
+            Check(File.Exists(Install.PreparedMarker(root)), "prepared marker written for RecompLauncher");
             Check(!start.Environment.ContainsKey("TOTK_MEMORY") && !start.Environment.ContainsKey("TOTK_XLATE_DEBUG") &&
                 !start.Environment.ContainsKey("TOTK_SUBMIT_SYNC"),
                 "Linux launch leaves the removed memory, shader and timing experiments unset");
@@ -101,7 +114,7 @@ static class SelfCheck
                 Install.PinLauncher(pinned, [1, 2, 3]);
                 Check(File.ReadAllText(installed) == "synthetic AppImage" &&
                     File.ReadAllText(Path.Combine(pinned, ".karpur-linux-launcher-version")) == Program.BuildRevision,
-                    "0.4.0 release replaces the obsolete 0.3.8.10 Deck launcher");
+                    "0.4.4 release replaces the obsolete 0.3.8.10 Deck launcher");
                 File.WriteAllText(installed, "newer launcher");
                 File.WriteAllText(Path.Combine(pinned, ".karpur-linux-launcher-version"), "99.0.0");
                 Install.PinLauncher(pinned, [1, 2, 3]);

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 
 namespace KarPurLauncher;
@@ -19,24 +20,32 @@ static class Program
         return null;
     }
 
+    static string? Option(string[] args, string name)
+    {
+        int i = Array.IndexOf(args, name);
+        if (i >= 0 && i + 1 < args.Length) return args[i + 1];
+        string prefix = name + "=";
+        return args.FirstOrDefault(a => a.StartsWith(prefix, StringComparison.Ordinal)) is { } value
+            ? value[prefix.Length..] : null;
+    }
+
+    static int Fail(string message)
+    {
+        Console.Error.WriteLine(message.Replace("\r", " ").Replace("\n", " "));
+        return 1;
+    }
+
     // Build from an external launcher using the same installer as the Setup tab.
     // Paths are passed as individual arguments and may contain spaces.
     static int Prepare(string[] args)
     {
-        string? Opt(string name)
-        {
-            int i = Array.IndexOf(args, name);
-            return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
-        }
-        static int Fail(string message)
-        {
-            Console.Error.WriteLine(message.Replace("\r", " ").Replace("\n", " "));
-            return 1;
-        }
-        string target = Opt("--target") ?? Path.GetDirectoryName(Environment.ProcessPath) ?? "";
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+        Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+        string target = Option(args, "--target") ?? Path.GetDirectoryName(Environment.ProcessPath) ?? "";
         if (target != "") target = Path.TrimEndingDirectorySeparator(target);
-        var inp = new Inputs(Opt("--game") ?? "", Opt("--update") ?? "", Opt("--dlc") ?? "", Opt("--keys") ?? "", target,
-                             Opt("--firmware") ?? "");
+        var inp = new Inputs(Option(args, "--game") ?? "", Option(args, "--update") ?? "",
+                             Option(args, "--dlc") ?? "", Option(args, "--keys") ?? "", target,
+                             Option(args, "--firmware") ?? "");
         if (!File.Exists(inp.Base)) return Fail("The base game (.xci or .nsp) given with --game was not found.");
         bool nsp = inp.Base.EndsWith(".nsp", StringComparison.OrdinalIgnoreCase);
         if (!nsp && !inp.Base.EndsWith(".xci", StringComparison.OrdinalIgnoreCase))
@@ -67,10 +76,29 @@ static class Program
         return 0;
     }
 
+    static int Play(string[] args)
+    {
+        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+        Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
+        string? target = Option(args, "--target");
+        if (string.IsNullOrWhiteSpace(target)) return Fail("The --target installation folder is required.");
+        string exe = Builder.Exe(target);
+        if (!File.Exists(exe)) return Fail("The PokiNative game executable was not found. Run setup first.");
+        try
+        {
+            using var game = Process.Start(Builder.GameStartInfo(target))
+                ?? throw new InvalidOperationException("Windows could not start the PokiNative game executable.");
+            game.WaitForExit();
+            return game.ExitCode;
+        }
+        catch (Exception e) { return Fail("Could not start PokiNative: " + e.Message); }
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
         if (args.Contains("--prepare")) return Prepare(args);
+        if (args.Contains("--play")) return Play(args);
         Updater.CleanUpOld();
         ApplicationConfiguration.Initialize();
         PreviewColour = args.FirstOrDefault(a => a.StartsWith("--colour="))?[9..];

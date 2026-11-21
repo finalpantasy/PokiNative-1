@@ -55,6 +55,26 @@ def base_id(title_id):
     return title_id & ~0xFFF if title_id & 0x1000 == 0 else (title_id - 0x1000) & ~0xFFF
 
 
+def validate_base(app):
+    """Refuse a Switch title that this recomp does not support."""
+    if app not in GAMES:
+        raise GameFileError(f'unsupported base game title ID {tid(app)}: expected Pokemon Scarlet or Pokemon Violet')
+
+
+def validate_update(app, update_ids):
+    """Refuse an update that belongs to another game."""
+    expected_update = app | 0x800
+    if expected_update not in update_ids:
+        raise GameFileError(f'update does not belong to {GAMES[app]} ({tid(app)}): '
+                            f'expected update title ID {tid(expected_update)}')
+
+
+def validate_copy(app, update_ids):
+    """Validate both halves of the copy before setup continues."""
+    validate_base(app)
+    validate_update(app, update_ids)
+
+
 def load_config(path):
     if not path.is_file():
         raise GameFileError(f'{path.name} not found: copy config.example.toml to config.local.toml and fill in your paths')
@@ -127,6 +147,7 @@ def main():
 
     base_nca, base_files = extract_program(report, 'Base game', base_path, keys, args.out / 'extracted' / 'base', update=False)
     app = base_nca.title_id
+    validate_base(app)
     report(f'  Game: {GAMES.get(app, "UNKNOWN GAME")} ({tid(app)})')
     report(f'  main sha256: {short_hash(base_files["main"])}')
     report()
@@ -135,6 +156,7 @@ def main():
     update_ids = {n.title_id for n in open_container(update_path, keys)[2]}
     if not update_ids <= {app, app | 0x800}:
         raise GameFileError(f'{update_path.name} belongs to another game ({", ".join(map(tid, sorted(update_ids)))})')
+    validate_copy(app, update_ids)
     report(f'  main sha256: {short_hash(update_files["main"])}')
     report()
 

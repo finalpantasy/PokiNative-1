@@ -79,6 +79,24 @@ static class BundledFiles
 
 static class Install
 {
+    static readonly Dictionary<string, (string Text, int Weight)> Steps = new()
+    {
+        ["check"] = ("Checking the game files", 1),
+        ["toolchain"] = ("Preparing the compiler", 4),
+        ["extract"] = ("Unpacking the game code", 2),
+        ["fonts"] = ("Unpacking the system fonts", 1),
+        ["romfs"] = ("Merging the game data", 18),
+        ["dlc"] = ("Unpacking the DLC", 1),
+        ["menu"] = ("Setting up the PC settings menu", 1),
+        ["fps"] = ("Preparing the 60 FPS patches", 1),
+        ["icon"] = ("Taking the game icon", 1),
+        ["lift"] = ("Translating the game code", 55),
+        ["build"] = ("Building karpur", 14),
+        ["selftest"] = ("Running the game self-test", 1),
+        ["shaders"] = ("Preparing shaders", 6),
+        ["cleanup"] = ("Cleaning up", 1),
+    };
+
     public static string Game(string root) => Path.Combine(root, "build", "game", "karpur");
     public static string Profile(string root) => Path.Combine(root, "build", "profile");
     public static string Python(string root) => Path.Combine(root, "toolchain", "python", "bin", "python3");
@@ -123,7 +141,7 @@ static class Install
         Directory.CreateDirectory(Path.GetDirectoryName(application)!);
         static string Quoted(string path) => "\"" + path.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("$", "\\$")
             .Replace("`", "\\`").Replace("%", "%%") + "\"";
-        string entry = "[Desktop Entry]\nType=Application\nName=KarPur Linux Launcher\nComment=Play KarPur on Linux\n" +
+        string entry = "[Desktop Entry]\nType=Application\nName=PokiNative Launcher\nComment=Play PokiNative on Linux\n" +
             "Exec=" + Quoted(target) + "\nIcon=" + image + "\nTerminal=false\nCategories=Game;\n";
         File.WriteAllText(application, entry);
         string desktop = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Desktop");
@@ -222,29 +240,65 @@ static class Install
         if (process.ExitCode != 0) throw new IOException($"{Path.GetFileName(exe)} exited with code {process.ExitCode}. See Logs for details.");
     }
 
-    public static async Task Build(UserState input, Action<string> log, CancellationToken cancel)
+    public static async Task Build(UserState input, Action<string> log, CancellationToken cancel,
+        Action<double, string>? progress = null)
     {
         if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("The game build requires Linux.");
         string root = Path.GetFullPath(input.Target);
         if (root == "/" || root == Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))
-            throw new IOException("Choose a dedicated KarPur installation folder.");
+            throw new IOException("Choose a dedicated PokiNative installation folder.");
         if (GameRunning) throw new IOException("Close the running game first.");
         string archive = BundledFiles.Payload();
         Directory.CreateDirectory(root);
         using var buildLock = new FileStream(Path.Combine(root, ".linux-build.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        progress?.Invoke(0, "Preparing project files");
         log("Preparing project files …");
         await Task.Run(() => Unpack(archive, root, cancel, (done, total) => log($"Project files: {done:N0} of {total:N0} prepared")), cancel);
+        progress?.Invoke(0.05, "Setting up the build");
         string python = Python(root);
         if (!File.Exists(python)) throw new IOException("Bundled Linux Python is missing.");
         var arguments = new List<string> { "tools/setup_build.py", "--base", input.Base, "--update", input.Update, "--keys", input.Keys, "--keep" };
         if (input.Firmware.Length > 0) arguments.AddRange(["--firmware", input.Firmware]);
         if (input.Dlc.Length > 0) arguments.AddRange(["--dlc", input.Dlc]);
         using var writer = new StreamWriter(Path.Combine(root, "launcher-linux.log"), append: true) { AutoFlush = true };
-        void Report(string line) { lock (writer) writer.WriteLine(line); log(line); }
+        string[] plan = [];
+        int before = 5, weight = 0, totalWeight = 1;
+        string status = "Building PokiNative";
+        void Report(string line)
+        {
+            lock (writer) writer.WriteLine(line);
+            log(line);
+            string[] parts = line.Split(' ', 4);
+            if (parts[0] == "PLAN" && parts.Length >= 2)
+            {
+                plan = parts[1].Split(',');
+                totalWeight = Math.Max(1, plan.Sum(step => Steps.GetValueOrDefault(step).Weight));
+            }
+            else if (parts[0] == "STEP" && parts.Length >= 4)
+            {
+                int done = plan.TakeWhile(step => step != parts[3]).Sum(step => Steps.GetValueOrDefault(step).Weight);
+                before = 5 + done * 95 / totalWeight;
+                weight = Steps.GetValueOrDefault(parts[3]).Weight * 95 / totalWeight;
+                status = Steps.TryGetValue(parts[3], out var step) ? step.Text : parts[3];
+                progress?.Invoke(before / 100.0, status);
+            }
+            else if (parts[0] == "PERCENT" && parts.Length >= 2 &&
+                     int.TryParse(parts[^1], System.Globalization.NumberStyles.Integer,
+                         System.Globalization.CultureInfo.InvariantCulture, out int percent))
+            {
+                progress?.Invoke((before + weight * Math.Clamp(percent, 0, 100) / 100) / 100.0, status);
+            }
+        }
         await Run(python, arguments, root, Report, cancel);
         if (!File.Exists(Game(root))) throw new IOException("The build did not create a game executable.");
         File.WriteAllText(Path.Combine(root, ".karpur-linux-version"), Program.Version);
+        MarkPrepared(root);
+        progress?.Invoke(1, "PokiNative is ready");
     }
+
+    public static string PreparedMarker(string root) => Path.Combine(root, ".karpur-recomp-ready");
+
+    public static void MarkPrepared(string root) => File.WriteAllText(PreparedMarker(root), Program.Version);
 
     public static void SaveSettings(string root, string fps, string window, bool handheld, string upscaler, string present, string overlay,
         bool fullscreen = false, string shadow = "0", string population = "switch", bool noExclusives = false,

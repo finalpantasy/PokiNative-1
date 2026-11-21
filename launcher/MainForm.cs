@@ -68,7 +68,7 @@ partial class MainForm : Form
         "Keep hot memory active sets hot_cool = 0; turning it off restores 300. It may reduce performance over longer play.",
         9.5f, muted: true);
     readonly Label resizableBarNote = Theme.Label(
-        "Resizable BAR can improve KarPur performance on supported PCs. In your motherboard's UEFI/BIOS, enable "
+        "Resizable BAR can improve PokiNative performance on supported PCs. In your motherboard's UEFI/BIOS, enable "
         + "Above 4G Decoding and Re-Size BAR (sometimes Smart Access Memory), then restart. Use UEFI boot; "
         + "check NVIDIA Control Panel > System Information > Resizable BAR: Yes. Menu names vary by motherboard.",
         9.5f, muted: true);
@@ -174,7 +174,7 @@ partial class MainForm : Form
     {
         this.updated = updated;
         startTab = tab;
-        Text = "KarPur Launcher";
+        Text = "PokiNative Launcher";
         Font = new Font("Segoe UI", 10f);
         BackColor = Theme.Back;
         ForeColor = Theme.Text;
@@ -271,14 +271,14 @@ partial class MainForm : Form
         var logo = sidebarLogo;
         logo.Size = new Size(46, 46);
         logo.Location = new Point(18, 20);
-        var title = Theme.Label("KarPur", 17f, style: FontStyle.Bold);
+        var title = Theme.Label("PokiNative", 17f, style: FontStyle.Bold);
         title.Location = new Point(70, 20);
         var version = Theme.Label($"Version {Program.Version}", 9f, muted: true);
         version.Location = new Point(72, 48);
         side.Controls.Add(logo);
         side.Controls.Add(title);
         side.Controls.Add(version);
-        var library = Theme.Label("KARPUR", 8f, muted: true, style: FontStyle.Bold);
+        var library = Theme.Label("POKINATIVE", 8f, muted: true, style: FontStyle.Bold);
         library.Location = new Point(26, 101);
         side.Controls.Add(library);
         int y = 128;
@@ -689,7 +689,7 @@ partial class MainForm : Form
         page.Controls.Add(notesPanel);
         page.Controls.Add(Spacer(14));
         page.Controls.Add(CardOf(top));
-        page.Controls.Add(Header("Update", "New versions come from the KarPur releases on GitHub. Only what changed is rebuilt."));
+        page.Controls.Add(Header("Update", "New versions come from the upstream GitHub releases. Only what changed is rebuilt."));
         return page;
     }
 
@@ -764,7 +764,7 @@ partial class MainForm : Form
         page.Controls.Add(buttons);
         page.Controls.Add(Spacer(14));
         page.Controls.Add(CardOf(grid));
-        page.Controls.Add(Header("Feedback", "Tell us how KarPur runs on your PC. It opens as a GitHub issue that you check and submit."));
+        page.Controls.Add(Header("Feedback", "Tell us how PokiNative runs on your PC. It opens as a GitHub issue that you check and submit."));
 
         fbReport.TextChanged += (_, _) => fbCount.Text = $"{fbReport.TextLength} / {Feedback.ReportLimit}";
         fbLog.Click += (_, _) =>
@@ -1051,7 +1051,7 @@ partial class MainForm : Form
         var missing = StreamlineFiles.Where(f => !File.Exists(Path.Combine(dir, f))).ToList();
         var notes = new List<string>();
         if (missing.Count > 0) notes.Add("Missing next to karpur.exe: " + string.Join(", ", missing) + ". Add them with the button "
-                                         + "(a game with DLSS Frame Generation has them; KarPur cannot ship them).");
+                                         + "(a game with DLSS Frame Generation has them; PokiNative does not include them).");
         if (!File.Exists(DlssPath())) notes.Add("Frame generation also needs nvngx_dlss.dll (Anti-aliasing above).");
         if (!HagsOn()) notes.Add("Turn on Windows' hardware-accelerated GPU scheduling (Settings > System > Display > Graphics) "
                                  + "and restart the PC.");
@@ -1105,7 +1105,7 @@ partial class MainForm : Form
         if (targetBox.Text == "" || !File.Exists(Builder.Exe(targetBox.Text))) { dlssNote.Text = ""; return; }
         if (Value(antiAliasing) == "2")
         {
-            dlssNote.Text = "AMD FSR 2 is included with KarPur. Moving Pokémon, foliage and effects may leave trails until their motion is tracked separately.";
+            dlssNote.Text = "AMD FSR 2 is included with PokiNative. Moving Pokémon, foliage and effects may leave trails until their motion is tracked separately.";
             return;
         }
         string dll = DlssPath();

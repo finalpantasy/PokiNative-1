@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -15,34 +16,31 @@ static class Updates
         return http;
     }
 
+    internal static bool IsSupportedAppImageAsset(string name) =>
+        name.EndsWith(".AppImage", StringComparison.OrdinalIgnoreCase) &&
+        (name.StartsWith("PokiNative-", StringComparison.OrdinalIgnoreCase) ||
+         name.StartsWith("KarPur-Linux-Launcher", StringComparison.OrdinalIgnoreCase) ||
+         name.StartsWith("KarPur-Launcher-Linux", StringComparison.OrdinalIgnoreCase) ||
+         name.StartsWith("KarPur-SteamDeck-Installer", StringComparison.OrdinalIgnoreCase));
+
     public static async Task<LinuxRelease?> Latest(CancellationToken token = default)
     {
         using var http = Client(TimeSpan.FromSeconds(25));
-        using var reply = await http.GetAsync("https://api.github.com/repos/Grunttanamo/KarPur/releases?per_page=20", token);
+        using var reply = await http.GetAsync("https://api.github.com/repos/privacymatters42069-del/PokiNative/releases/latest", token);
+        if (reply.StatusCode == HttpStatusCode.NotFound) return null;
         reply.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await reply.Content.ReadAsStringAsync(token));
-        foreach (var release in json.RootElement.EnumerateArray())
-        {
-            if (release.GetProperty("draft").GetBoolean() || release.GetProperty("prerelease").GetBoolean()) continue;
-            string tag = release.GetProperty("tag_name").GetString() ?? "";
-            if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version)) continue;
-            var assets = release.GetProperty("assets").EnumerateArray().ToArray();
-            var appImage = assets.FirstOrDefault(a =>
-            {
-                string name = a.GetProperty("name").GetString() ?? "";
-                return name.EndsWith(".AppImage", StringComparison.OrdinalIgnoreCase) &&
-                    (name.StartsWith("KarPur-Linux-Launcher", StringComparison.OrdinalIgnoreCase) ||
-                     name.StartsWith("KarPur-Launcher-Linux", StringComparison.OrdinalIgnoreCase) ||
-                     name.StartsWith("KarPur-SteamDeck-Installer", StringComparison.OrdinalIgnoreCase));
-            });
-            if (appImage.ValueKind == JsonValueKind.Undefined) continue;
-            string name = appImage.GetProperty("name").GetString()!;
-            string? checksum = assets.Where(a => a.GetProperty("name").GetString() == name + ".sha256")
-                .Select(a => a.GetProperty("browser_download_url").GetString()).FirstOrDefault();
-            return new(version, name, appImage.GetProperty("browser_download_url").GetString()!, checksum,
-                release.GetProperty("html_url").GetString()!);
-        }
-        return null;
+        JsonElement release = json.RootElement;
+        string tag = release.GetProperty("tag_name").GetString() ?? "";
+        if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version)) return null;
+        var assets = release.GetProperty("assets").EnumerateArray().ToArray();
+        var appImage = assets.FirstOrDefault(a => IsSupportedAppImageAsset(a.GetProperty("name").GetString() ?? ""));
+        if (appImage.ValueKind == JsonValueKind.Undefined) return null;
+        string imageName = appImage.GetProperty("name").GetString()!;
+        string? checksum = assets.Where(a => a.GetProperty("name").GetString() == imageName + ".sha256")
+            .Select(a => a.GetProperty("browser_download_url").GetString()).FirstOrDefault();
+        return new(version, imageName, appImage.GetProperty("browser_download_url").GetString()!, checksum,
+            release.GetProperty("html_url").GetString()!);
     }
 
     public static async Task<string> Download(LinuxRelease release, string root, byte[] icon,
@@ -50,7 +48,7 @@ static class Updates
     {
         if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException();
         root = Path.GetFullPath(root);
-        if (root == "/") throw new IOException("Choose a KarPur installation folder first.");
+        if (root == "/") throw new IOException("Choose a PokiNative installation folder first.");
         Directory.CreateDirectory(root);
         string target = Path.Combine(root, "KarPur-Linux-Launcher.AppImage");
         string temporary = target + ".download";

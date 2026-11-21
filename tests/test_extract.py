@@ -9,6 +9,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'tools'))
+import extract
 
 
 def run(*args):
@@ -16,6 +18,21 @@ def run(*args):
 
 
 def main():
+    for app in (0x01008F6008C5E000, 0x0100A3D008C5C000):
+        extract.validate_copy(app, {app, app | 0x800})
+    try:
+        extract.validate_copy(0x0100000000010000, {0x0100000000010800})
+    except extract.GameFileError as e:
+        assert 'unsupported base game title ID' in str(e)
+    else:
+        raise AssertionError('unknown base title was accepted')
+    try:
+        extract.validate_copy(0x01008F6008C5E000, {0x0100A3D008C5C800})
+    except extract.GameFileError as e:
+        assert 'does not belong to Pokemon Violet' in str(e)
+    else:
+        raise AssertionError('wrong update title was accepted')
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         assert run(ROOT / 'tests' / 'make_fake_game.py', tmp).returncode == 0

@@ -11,7 +11,7 @@ namespace KarPurLauncher;
 // the player sees the filled-in form in their browser and submits it there.
 static class Feedback
 {
-    const string NewIssue = "https://github.com/Grunttanamo/KarPur/issues/new";
+    const string NewIssue = "https://github.com/privacymatters42069-del/PokiNative/issues/new";
     public const int ReportLimit = 5000;
     // GitHub takes up to ~8000 characters, but Windows' shell did not open longer links than ~2000 at all (the button did
     // nothing, 2026-11-08): beyond that the report goes to the clipboard

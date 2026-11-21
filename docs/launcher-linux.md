@@ -2,6 +2,8 @@
 
 This separate Linux launcher uses Avalonia and is built as `KarPur-Launcher-Linux-x86_64.AppImage`. For the 0.4.2 build on Steam Deck, use `KarPur-Linux-Launcher-0.4.2.AppImage`. Only the AppImage needs to be transferred. A complete folder package is also available as `KarPur-Launcher-Linux-x86_64.tar.gz`.
 
+Future release packages built from this source use the `PokiNative-` filename prefix. Existing `KarPur` executable names and in-install paths stay unchanged for compatibility.
+
 The launcher builds and repairs the native Linux game from your own dumps, starts an existing installation, manages graphics settings and saves, and shows the build log. Home uses the existing edition artwork and logos. The 0.4.2 build has an English interface and separate Controls and Update pages.
 
 **Experimental:** Trees and other scenery can be missing on Steam Deck, and performance can vary. Home links to GitHub Issues and pull requests. Reports from people familiar with Linux and Vulkan are especially helpful when they include the device, graphics driver, and logs.

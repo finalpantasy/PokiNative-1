@@ -44,6 +44,8 @@ void vk_caps_driver(VkPhysicalDevice p) {
     // AMD split RDNA 1 and 2 off into a driver branch of their own; its driverInfo reads
     // "26.10.1 (AMD proprietary shader compiler)" where the RDNA 3 and 4 driver names LLPC.
     vk_caps.amd_sc = drv.driverID == VK_DRIVER_ID_AMD_PROPRIETARY && strstr(drv.driverInfo, "shader compiler");
+    vk_caps.amd_rdna3 = vk_caps.amd && p2.properties.deviceID >= 0x7400 &&
+                        p2.properties.deviceID <= 0x74ff;
 }
 
 // TOTK_GPL=0/1 forces graphics pipeline libraries off or on. Default off on every AMD driver: on the RDNA 1/2 branch

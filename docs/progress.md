@@ -1,5 +1,13 @@
 # Progress
 
+## Aligning source with the 0.4.5 cloud-save-fix packages (2026-11-21)
+
+- Compared `PokiNative-main` and `PokiNative-git` against the Windows and Linux source payloads in `PokiNative-0.4.5-cloud-save-fix`. The 20 modified tracked files match the release workspace; source payload hashes match except for `docs/progress.md`, which was updated after the packages were built. The Windows and Linux save manifests remain intentionally platform-specific.
+- The full and staged `tools/check_content.py` checks, `tools/check_launcher.py`, and the extraction, RomFS, and phase-report tests pass in `PokiNative-git`. The payload path scan found no game or key paths.
+- Kept local `.githooks` documentation/license copies and the generated `tools/xlate/obj` file out of Git. The Windows package's payload snapshot contains those local files; filter them from future Windows payloads. The old nested `docs/docs` files and the placeholder Windows build workflow remain unchanged.
+- The release README's RecompLauncher anchor contains literal square brackets in its `href`. Left it unchanged to preserve the 0.4.5 package source; correct it with a rebuilt package if desired.
+- Next: commit and push the verified source changes to `main`, then confirm GitHub Actions. Do not publish the Windows/Linux binaries as part of this source sync.
+
 ## Building 0.4.5 with platform-correct RecompLauncher save paths (2026-11-21)
 
 - RecompLauncher treats every manifest `saves` entry as an active location, not a fallback. Its UI makes developer-declared paths read-only, which explains why the Windows path could not be changed by the player.

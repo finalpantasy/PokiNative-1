@@ -145,6 +145,7 @@ class Builder
         if (exe == null || p.ExitCode != 0)
             return error ?? (err.Trim() != "" ? err.Trim().Split('\n')[^1] : $"The build ended with code {p.ExitCode}");
         try { Install(inp.Target, L); } catch (Exception e) { L("warning: " + e.Message); }
+        File.WriteAllText(Path.Combine(inp.Target, ".karpur-recomp-ready"), Program.Version);
         Percent?.Invoke(100);
         return null;
     }
@@ -158,7 +159,7 @@ class Builder
             File.Copy(self, copy, overwrite: true);
         string exe = Exe(target);
         foreach (var old in Directory.GetFiles(target, "* (KarPur).lnk")) File.Delete(old);
-        string name = Game(target) == "scarlet" ? "Pokémon Scarlet (KarPur)" : "Pokémon Violet (KarPur)";
+        string name = Game(target) == "scarlet" ? "Pokémon Scarlet (PokiNative)" : "Pokémon Violet (PokiNative)";
         var shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("no WScript.Shell");
         dynamic shell = Activator.CreateInstance(shellType)!;
         dynamic lnk = shell.CreateShortcut(Path.Combine(target, name + ".lnk"));

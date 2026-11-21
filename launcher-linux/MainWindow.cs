@@ -23,7 +23,7 @@ sealed class MainWindow : Window
     readonly List<Control> operations = [];
     readonly Dictionary<string, TextBox> inputs = [];
     readonly Image sidebarLogo = new() { Height = 78, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left };
-    readonly TextBlock brandTitle = Text("KarPur", 25);
+    readonly TextBlock brandTitle = Text("PokiNative", 25);
     readonly Button cancel = new() { Content = "Cancel", IsVisible = false };
     CancellationTokenSource? buildCancellation;
     bool busy;
@@ -54,7 +54,7 @@ sealed class MainWindow : Window
     {
         try { state = smoke ? new UserState { Colour = Environment.GetEnvironmentVariable("KARPUR_SMOKE_COLOUR") ?? "auto" } : UserState.Load(); }
         catch { state = new UserState(); }
-        Title = "KarPur Linux Launcher";
+        Title = "PokiNative Launcher";
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://KarPur-Launcher-Linux/Assets/icon-" + (Scarlet() ? "scarlet" : "violet") + ".png")));
         Width = 1120; Height = 820; MinWidth = 780; MinHeight = 650;
         Background = Brush.Parse("#14121F");
@@ -164,7 +164,7 @@ sealed class MainWindow : Window
         var play = Action(installed ? "▶  Play" : "Set up now", () =>
         {
             if (!File.Exists(Install.Game(state.Target))) { Setup(); Report("Set up the game or select its installation folder first."); return Task.CompletedTask; }
-            if (Install.GameRunning) throw new IOException("KarPur is already running.");
+            if (Install.GameRunning) throw new IOException("PokiNative is already running.");
             ProcessGame(); return Task.CompletedTask;
         }, true);
         var heroBody = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
@@ -214,7 +214,7 @@ sealed class MainWindow : Window
         content.Children.Add(Card(Stack(Text(installed ? "Game ready to play" : "Your next adventure starts here", 20),
                 Text(state.Target, 13, "#B9AECF"),
                 Text(installed ? "Your installed edition is ready in the Linux launcher." :
-                    "Build KarPur from your own game files in Setup.", 14, "#C1B7D1"))));
+                    "Build PokiNative from your own game files in Setup.", 14, "#C1B7D1"))));
         content.Children.Add(Card(Stack(Text("Your edition. Your PC.", 20),
                 Text("Manage graphics, controller settings and saves from the sidebar.", 14, "#C1B7D1"),
                 Action(installed ? "Repair installation" : "Set up installation", () => { Setup(); return Task.CompletedTask; }))));
@@ -261,9 +261,9 @@ sealed class MainWindow : Window
     void ProcessGame()
     {
         var process = System.Diagnostics.Process.Start(Install.StartInfo(state.Target, state.DeckControls)) ?? throw new IOException("Could not start the game.");
-        Report("KarPur started.");
+        Report("PokiNative started.");
         process.EnableRaisingEvents = true;
-        process.Exited += (_, _) => Dispatcher.UIThread.Post(() => Report($"KarPur exited (code {process.ExitCode})."));
+        process.Exited += (_, _) => Dispatcher.UIThread.Post(() => Report($"PokiNative exited (code {process.ExitCode})."));
     }
 
     Control Pick(string key, string title, string value, bool folder, Action<string> save, params string[] extensions)
@@ -301,7 +301,7 @@ sealed class MainWindow : Window
         SelectNavigation(1);
         inputs.Clear();
         Page("Setup", "Build your game on Linux",
-            Card(Stack(Text("Installation folder", 20), Pick("target", "Folder for KarPur", state.Target, true, v => state.Target = v))),
+            Card(Stack(Text("Installation folder", 20), Pick("target", "Folder for PokiNative", state.Target, true, v => state.Target = v))),
             Card(Stack(Text("Your game files", 20),
                 Pick("base", "Base game (.xci or .nsp)", state.Base, false, v => state.Base = v, "xci", "nsp"),
                 Pick("update", "Update (.nsp)", state.Update, false, v => state.Update = v, "nsp"),
@@ -350,7 +350,7 @@ sealed class MainWindow : Window
             catch (Exception e) { Report("Game built, but launcher shortcut could not be created: " + e.Message); }
             buildComplete = true;
             ApplyEdition();
-            Report("Build complete. KarPur is ready to play.");
+            Report("Build complete. PokiNative is ready to play.");
             progress.Value = 100;
             progress.IsVisible = false;
             Logs();
@@ -594,7 +594,7 @@ sealed class MainWindow : Window
                     {
                         string target = await Updates.Download(release, state.Target, icon,
                             percent => Dispatcher.UIThread.Post(() => progress.Value = percent));
-                        result.Text = "Update installed. Close this launcher and open KarPur Linux Launcher again.";
+                        result.Text = "Update installed. Close this launcher and open PokiNative Launcher again.";
                         actions.Children.Clear();
                         Report("Updated launcher: " + target);
                     }
@@ -615,7 +615,7 @@ sealed class MainWindow : Window
         if (buildComplete)
             Page("Logs", "Installation complete",
                 Card(Stack(Text("✓  Ready to play", 24, "#8CE3B5"),
-                    Text("The game and launcher are installed. Use Play in Home or the KarPur Linux Launcher shortcut.", 14, "#C1B7D1"),
+                    Text("The game and launcher are installed. Use Play in Home or the PokiNative Launcher shortcut.", 14, "#C1B7D1"),
                     Action("Play now", () => { ProcessGame(); return Task.CompletedTask; }, true))),
                 Card(details));
         else Page("Logs", "Current activity", Card(details));

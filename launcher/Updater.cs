@@ -9,7 +9,7 @@ namespace KarPurLauncher;
 // what the release changed.
 static class Updater
 {
-    const string Api = "https://api.github.com/repos/Grunttanamo/KarPur/releases/latest";
+    const string Api = "https://api.github.com/repos/privacymatters42069-del/PokiNative/releases/latest";
     const string Asset = "KarPur-Launcher.exe";
 
     public record Release(Version Version, string Tag, string Url, string Notes);

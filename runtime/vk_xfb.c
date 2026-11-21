@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "cfg.h"
 #include "host.h"
 #include "nvn_api.h"
 #include "nvn_xfb.h"
@@ -229,7 +230,8 @@ static uint64_t captured_vertices(int prim, uint32_t n, uint32_t inst) {
     return v * (inst ? inst : 1);
 }
 
-// TOTK_XFB_SYNC=1 (off): a full barrier after every captured draw, not only when transform feedback ends.
+// TOTK_XFB_SYNC=1 (AMD RDNA 3 default on; 0 elsewhere): a full barrier after every captured draw, not only when
+// transform feedback ends.
 // For the device loss on RDNA 3 during character creation (issue #18): there, TOTK_XFB=0 avoids it (and ruins the
 // skinned models), while AMD's Crash Analysis avoids it with the models intact - and that instrumentation mainly
 // serializes the GPU's work. Forcing full barriers elsewhere (TOTK_BARRIER_TRACK=0) did not help, and the barrier
@@ -238,8 +240,12 @@ static uint64_t captured_vertices(int prim, uint32_t n, uint32_t inst) {
 static int xfb_sync(void) {
     static int on = -1;
     if (on < 0) {
-        on = rt_knob("XFB_SYNC", "0");
-        if (on) rt_log("tf: a full barrier after every captured draw (TOTK_XFB_SYNC=1)");
+        const char *def = vk_caps.amd_rdna3 ? "1" : "0";
+        on = rt_knob("XFB_SYNC", def);
+        const char *explicit = cfg_get("TOTK_XFB_SYNC");
+        if (on) rt_log("tf: a full barrier after every captured draw (%s)", explicit && *explicit
+                                                                          ? "TOTK_XFB_SYNC=1"
+                                                                          : "AMD RDNA 3 default, TOTK_XFB_SYNC=0 to turn it off");
     }
     return on;
 }

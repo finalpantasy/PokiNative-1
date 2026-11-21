@@ -351,12 +351,12 @@ partial class MainForm
         var title = Theme.Label("Known issue: AMD graphics cards", 10.5f, style: FontStyle.Bold);
         title.ForeColor = Theme.Error;
         var body = Theme.Label(
-            "KarPur currently crashes or runs very poorly on AMD GPUs. If you know Vulkan and AMD drivers and could " +
+            "PokiNative currently crashes or runs very poorly on AMD GPUs. If you know Vulkan and AMD drivers and could " +
             "help track this down, please get in touch — it would help a lot of people at once.", 9.5f, muted: true);
         body.MaximumSize = new Size(700, 0);
         body.Margin = new Padding(0, 6, 0, 10);
         var link = new LinkLabel { Text = "Open the GitHub issues", AutoSize = true, LinkColor = Theme.Error, BackColor = Color.Transparent };
-        link.Click += (_, _) => Process.Start(new ProcessStartInfo("https://github.com/Grunttanamo/KarPur/issues") { UseShellExecute = true });
+        link.Click += (_, _) => Process.Start(new ProcessStartInfo("https://github.com/privacymatters42069-del/PokiNative/issues") { UseShellExecute = true });
         var stack = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, BackColor = Color.Transparent, WrapContents = false };
         stack.Controls.Add(title);
         stack.Controls.Add(body);

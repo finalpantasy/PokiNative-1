@@ -1,11 +1,17 @@
 # Progress
 
+## Publishing the 0.4.5 release notes (2026-11-21)
+
+- Added `docs/releases/0.4.5.md` with the platform-specific save paths, AMD recorder setting, setup validation, launcher/download updates, and unverified test limitations.
+- Updated the README to link to the 0.4.5 notes and fixed the malformed RecompLauncher badge URL. These are documentation changes; the already-built launcher binaries were not rebuilt or uploaded.
+- Next: keep a matching `docs/releases/<version>.md` and update the README's latest-release link for each release.
+
 ## Aligning source with the 0.4.5 cloud-save-fix packages (2026-11-21)
 
 - Compared `PokiNative-main` and `PokiNative-git` against the Windows and Linux source payloads in `PokiNative-0.4.5-cloud-save-fix`. The 20 modified tracked files match the release workspace; source payload hashes match except for `docs/progress.md`, which was updated after the packages were built. The Windows and Linux save manifests remain intentionally platform-specific.
 - The full and staged `tools/check_content.py` checks, `tools/check_launcher.py`, and the extraction, RomFS, and phase-report tests pass in `PokiNative-git`. The payload path scan found no game or key paths.
 - Kept local `.githooks` documentation/license copies and the generated `tools/xlate/obj` file out of Git. The Windows package's payload snapshot contains those local files; filter them from future Windows payloads. The old nested `docs/docs` files and the placeholder Windows build workflow remain unchanged.
-- The release README's RecompLauncher anchor contains literal square brackets in its `href`. Left it unchanged to preserve the 0.4.5 package source; correct it with a rebuilt package if desired.
+- The README's RecompLauncher anchor was corrected in the documentation update below; the already-built package binaries remain unchanged.
 - Next: commit and push the verified source changes to `main`, then confirm GitHub Actions. Do not publish the Windows/Linux binaries as part of this source sync.
 
 ## Building 0.4.5 with platform-correct RecompLauncher save paths (2026-11-21)

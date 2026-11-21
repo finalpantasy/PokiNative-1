@@ -6,8 +6,10 @@
 - Bumped Windows and Linux launcher metadata to 0.4.6, updated the current download guides, added `docs/releases/0.4.6.md`, and replaced the placeholder workflow with Windows/Linux builds, checks, SHA-256 files, and a draft-only release step.
 - The workflow creates or refreshes a draft only for a pushed `0.4.6` tag. The Windows executable remains unsigned; the draft must stay unpublished until its exact artifact is reviewed by the antivirus vendor and RecompLauncher.
 - Excluded local `.githooks` copies and generated `tools/xlate/bin`/`obj` files from the Windows payload. Content, launcher, extraction, RomFS, and phase-report checks pass locally. The lifter test is Linux-only and will run in the Ubuntu workflow.
-- The first `0.4.6` Actions run passed validation but both platform builds failed: MSYS2 installed in a temporary directory instead of `C:\msys64`, and SDL's configure step needs `libxtst-dev`. The workflow fixes are on `main`; no draft release was created.
-- Next: after approval, move only the newly created, unpublished `0.4.6` tag to the workflow-fix commit, rerun Actions, and keep the resulting draft unpublished pending review.
+- The first `0.4.6` Actions run passed validation but both platform builds failed: MSYS2 was installed in a temporary directory instead of `C:\msys64`, and SDL's configure step needed `libxtst-dev`. The first workflow fixes were pushed to `main`, and the unpublished `0.4.6` tag was moved to that fix.
+- The rerun (`44926255045`) passed validation and the Linux AppImage build. Windows hactool still failed with exit 127: the action installed MSYS2 under `D:\a\_temp\setup-msys2`, while the build helper invoked `C:\msys64\usr\bin\bash.exe`, which did not contain the installed compiler tools. No draft was created.
+- Updated the workflow and `tools/build_hactool.py` to pass the setup action's actual `msys2-location` output to the builder. The builder now prints captured make output on failure. A local path-resolution check passed; the fix has not yet been pushed or run in Actions.
+- Next: commit and push this fix, then get approval before moving the unpublished `0.4.6` tag again. Keep the resulting draft unpublished pending antivirus and RecompLauncher review.
 
 ## Publishing the 0.4.5 release notes (2026-11-21)
 

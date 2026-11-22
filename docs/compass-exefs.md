@@ -56,3 +56,8 @@ Lua globals (registered by H2):
 Log lines to check them: `mod pack compass: code patch set compass on`, `compass: Lua state ...`,
 `compass: EXP <before> -> <after> (level, level cap, EXP rate, ceiling)` after a battle that gives EXP (the first beach
 battle with Nemona gives none), `compass: party order ...`, `compass: h7 zero|query`.
+Checked in a hidden copy (2026-11-21): EXP 23 -> 13 at 60%, 52 -> 78 at 150%, 57 -> 0 at level cap 1 (the party's
+EXP in the save went up by exactly those amounts); saving Options with Exp. Share off and on logs `h7 zero` and
+`h7 query`; the food patch is in the lifted code (3600.0 under the set). H6 did not fire when the party was reordered
+in the menu (Make Lead and Change position); by its Lua names (`turn`, `previous_swap`, `reset_battle_team`) it is the
+switch inside a battle, which was not reached in the test.

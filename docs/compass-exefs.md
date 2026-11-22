@@ -2,6 +2,12 @@
 
 ## How it loads
 
+Play it as a mod pack: `karpur.exe --mod compass` (or `TOTK_MOD_PACK=compass`) uses `mods/compass/` next to
+`romfs-index.bin`: `romfs/` (the overlay below, `--out build/game/mods/compass/romfs`) and `prelude.lua` (a copy of
+`tools/compass_prelude.lua`). A pack keeps its saves apart (`<profile>/save-compass`, `save-compass-tx`,
+`save-compass-backup`) and turns `TOTK_UI_PATCH` off. Without `--mod` the game runs unchanged on its own `save/`.
+The pieces underneath, usable on their own:
+
 - RomFS: `tools/mod_overlay.py <mod> --romfs game/romfs --out build/game/romfs-mods` turns the mod's `romfs/` into an
   overlay folder (manifest.tsv with size and SHA-256 of every file). The runtime loads `romfs-mods` next to
   `romfs-index.bin` when `TOTK_ROMFS_MODS` is unset (`TOTK_ROMFS_MODS=<folder>` points elsewhere, `0` turns it off).

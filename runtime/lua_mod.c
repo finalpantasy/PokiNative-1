@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "cfg.h"
+#include "fs.h"
 #include "host.h"
 #include "platform/platform.h"
 #include "ui/menu.h"
@@ -128,7 +129,13 @@ static void run_prelude(Cpu *c, uint64_t L) {
     static char *src;
     static uint64_t size;
     static int tried;
+    static char pack_file[2200];
     const char *file = cfg_get("TOTK_LUA_PRELUDE");
+    // A mod pack's prelude.lua when TOTK_LUA_PRELUDE is unset (romfs.c rt_mod_pack)
+    if (!file && romfs_mod_pack_dir() &&
+        snprintf(pack_file, sizeof pack_file, "%s/prelude.lua", romfs_mod_pack_dir()) < (int)sizeof pack_file &&
+        plat_file_exists(pack_file))
+        file = pack_file;
     if (!file || !*file) return;
     if (!tried) {
         tried = 1;

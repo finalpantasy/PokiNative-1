@@ -46,6 +46,7 @@ static uint64_t file_count, strings_offset;
 static PlatFile *image;
 static const uint8_t *image_map;
 static char image_file[2048];
+static char pack_dir[2100];          // mods/<TOTK_MOD_PACK> next to romfs-index.bin, empty = no mod pack
 static char index_dir[2048];         // the directory of romfs-index.bin: the proof file's default place
 static char mount_name[32];
 static PlatMutex lock = PLAT_MUTEX_INIT;
@@ -425,9 +426,25 @@ static void overlay_init(void) {
     }
     // TOTK_ROMFS_MODS unset: romfs-mods next to romfs-index.bin if it has a manifest (tools/mod_overlay.py builds it
     // from a mod's romfs folder, e.g. Pokemon Compass with its own arc/data.trpfd and loose files); "0" = none.
+    // A mod pack (TOTK_MOD_PACK=<name>, karpur.exe --mod <name>) brings its own overlay in mods/<name>/romfs instead.
     char mods_def[2100];
     const char *mods = cfg_get("TOTK_ROMFS_MODS");
-    if (!mods && snprintf(mods_def, sizeof mods_def, "%s/romfs-mods/manifest.tsv", index_dir) < (int)sizeof mods_def &&
+    const char *pack = rt_mod_pack();
+    if (pack) {
+        if (snprintf(pack_dir, sizeof pack_dir, "%s/mods/%s", index_dir, pack) >= (int)sizeof pack_dir)
+            rt_fatal("mod pack %s: path too long", pack);
+        if (!plat_dir_exists(pack_dir))
+            rt_fatal("mod pack %s: no folder %s", pack, pack_dir);
+        rt_log("mod pack %s: %s (own saves in save-%s)", pack, pack_dir, pack);
+        if (!mods) {
+            if (snprintf(mods_def, sizeof mods_def, "%s/romfs/manifest.tsv", pack_dir) >= (int)sizeof mods_def ||
+                !plat_file_exists(mods_def))
+                rt_fatal("mod pack %s: no %s/romfs/manifest.tsv (tools/mod_overlay.py makes it)", pack, pack_dir);
+            mods_def[strlen(mods_def) - strlen("/manifest.tsv")] = 0;
+            mods = mods_def;
+        }
+    }
+    if (!mods && !pack && snprintf(mods_def, sizeof mods_def, "%s/romfs-mods/manifest.tsv", index_dir) < (int)sizeof mods_def &&
         plat_file_exists(mods_def)) {
         mods_def[strlen(mods_def) - strlen("/manifest.tsv")] = 0;
         mods = mods_def;
@@ -557,6 +574,21 @@ const char *romfs_entry(uint64_t i, uint64_t *offset, uint64_t *size) {
     if (size) *size = e.size;
     return entry_name(e);
 }
+
+// TOTK_MOD_PACK: a folder name (letters, digits, '-', '_'); empty, "0" or "off" = none. Another name stops the start.
+const char *rt_mod_pack(void) {
+    const char *p = cfg_get("TOTK_MOD_PACK");
+    if (!p || !*p || !strcmp(p, "0") || !strcmp(p, "off")) return NULL;
+    size_t n = strlen(p);
+    for (size_t i = 0; i < n; i++)
+        if (!((p[i] >= 'a' && p[i] <= 'z') || (p[i] >= 'A' && p[i] <= 'Z') || (p[i] >= '0' && p[i] <= '9') ||
+              p[i] == '-' || p[i] == '_'))
+            rt_fatal("TOTK_MOD_PACK '%s': use a folder name (letters, digits, - and _)", p);
+    if (n > 64) rt_fatal("TOTK_MOD_PACK '%s': name too long", p);
+    return p;
+}
+
+const char *romfs_mod_pack_dir(void) { return *pack_dir ? pack_dir : NULL; }
 
 const char *romfs_image_path(void) { return image_file; }
 

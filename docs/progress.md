@@ -5,8 +5,9 @@
 - Bumped Windows and Linux launcher metadata and user-facing version strings to 0.4.6.1. Updated the release workflow to build both launchers and create a draft release when the `0.4.6.1` tag is pushed.
 - Included the Linux launcher controller support and SDL3 packaging/self-check fix from PR #28. Windows' existing XInput support is unchanged.
 - Updated the current README, launcher guides, release notes, and duplicate guide copies. Historical 0.4.6 and earlier release notes remain unchanged.
-- Pushed the version bump to `main` as `ca9c7d1` through GitHub Desktop. Created tag `0.4.6.1` locally at that commit; it has not been pushed, so the release workflow has not started yet.
-- Next: push the `0.4.6.1` tag to start GitHub Actions, then review the draft assets and complete the Windows scan and RecompLauncher review. Real Linux controller validation remains outstanding.
+- Pushed the version bump to `main` as `ca9c7d1` through GitHub Desktop. The `0.4.6.1` tag points to that commit, and Actions run `44980045632` completed successfully: validation, Windows build, Linux AppImage build, and draft-release update all passed.
+- Both versioned artifacts were uploaded, with their SHA-256 sidecars. The release remains a draft; do not publish until the exact Windows executable has passed the antivirus-vendor scan and RecompLauncher review. Real Linux controller validation remains outstanding.
+- Next: review the draft assets and checksums, complete the Windows scan and RecompLauncher review, and test controller navigation on desktop Linux and Steam Deck.
 
 ## Linux launcher controller navigation (2026-11-21)
 

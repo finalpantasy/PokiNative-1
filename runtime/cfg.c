@@ -30,6 +30,7 @@ static int save_ok = 1;                         // the last cfg_save_to wrote (o
 // Every name the runtime reads (and the patch sets in generated/), without the prefix. A file key outside this list is
 // logged as unknown. A new variable goes here too, or its ini key logs a harmless "unknown key" line.
 static const char *const known[] = {
+    "LIGHTING_HALF", "SHADOW_SOFT",
     "AB", "ACQUIRE_AHEAD", "AO", "INDIRECT_LIGHT", "CAM_PROBE", "SHADOW_PROBE", "LIGHTING_TIME", "SHADOW_RES", "RES_PROBE", "DLAA", "DLAA_AT", "DLAA_DEPTH_INV", "DLAA_JITTER_BIAS", "DLAA_JX", "DLAA_JY", "DLAA_PRESET", "FSR2", "FSR2_OUT", "CAMERA_INVERT_X", "CAMERA_INVERT_Y", "SHADER_CENSUS", "STICK_SWAP", "DLSS_CONVERT", "DLSS_DEBUG", "FRAMEGEN", "FRAMEGEN_FEATURES", "FRAMEGEN_MODE", "FRAMEGEN_OBS", "FRAMEGEN_VERBOSE", "DLSS_HUD_DIFF", "DLSS_OUT", "APP_POOL", "ASPECT", "ASPECT_PATCH", "ASSUME_FOCUS", "ASTC", "ASTC_BC", "ASTC_TIME", "ASYNC_PREEMPT", "AUDIO", "AUDIO_OFF", "AUDIO_PREFILL_MS",
     "BACKGROUND_WINDOW", "BIND_A", "BIND_B", "BIND_DOWN", "BIND_L", "BIND_LCLICK", "BIND_LEFT", "BIND_LSTICK_DOWN", "BIND_LSTICK_LEFT",
     "BIND_LSTICK_RIGHT", "BIND_LSTICK_UP", "BIND_MINUS",
@@ -102,6 +103,7 @@ static const CfgMeta metas[] = {
     {"AO", "0", "0|1|2|3", RESTART}, {"INDIRECT_LIGHT", "0", "0|1|2|3", RESTART},
     {"ASPECT", "fit", "fit|stretch", LIVE}, {"FOV", "100", "70..140", LIVE},
     {"SHADOW_RES", "0", "0|off|2048|3072|4096", RESTART}, {"LIGHTING_HALF", "0", "0|1", RESTART},   // resolution.c res_shadow_init; 0: the game's own (1024)
+    {"SHADOW_SOFT", "0", NULL, RESTART},
     // Violet detail (lod.c, vk_texture.c), read at start
     {"LOD", "0", "0|1", RESTART}, {"LOD_BIAS", "-4", "-8..0", RESTART}, {"ANISO", "0", "0|2|4|8|16", RESTART},
     // colour adjustment (vk_color.c); the preset is the menu's, the four values are what the present uses

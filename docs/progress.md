@@ -1,5 +1,12 @@
 # Progress
 
+## Fixing 0.4.6.2 launcher validation (2026-11-22)
+
+- GitHub Actions run `45084779844` stopped in `validate` at `tools/check_launcher.py`; the workflow YAML and Python setup were not the cause. The checker found that `TOTK_SHADOW_SOFT` had no settings-table default and that `LIGHTING_HALF` was missing from the runtime's known-key list.
+- Added the `SHADOW_SOFT` setting with a default of `0` (preserving the existing no-filter behavior), and registered both keys with the runtime. The check remains enabled.
+- Local `tools/check_launcher.py` now passes the `settings` and `keys` checks. Its remaining `tools` check cannot pass here because this Mac has Python 3.9.6, which lacks `tomllib`, and the test dependencies are not installed; Actions uses Python 3.14.
+- Next: commit and push the changes to `testing` and confirm the Actions run passes before tagging a release.
+
 ## Separating test launcher builds from `main` (2026-11-22)
 
 - Updated the launcher workflow to build Windows and Linux artifacts for pushes to `main` or `testing`, pull requests targeting `testing`, and pushes of any tag. Build artifacts are named with the Actions run number and commit SHA unless the tag has a release-specific name.

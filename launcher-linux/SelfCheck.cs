@@ -64,7 +64,7 @@ static class SelfCheck
                 "legacy KarPur Linux AppImage assets remain recognized");
             Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.6-Windows-x64.zip"),
                 "non-AppImage release assets are ignored");
-            if (OperatingSystem.IsLinux())
+            if (OperatingSystem.IsLinux() && requirePayload)
                 Check(File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so")) &&
                     File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so.0")),
                     "SDL3 gamepad runtime is next to the Linux launcher");

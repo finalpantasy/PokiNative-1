@@ -11,7 +11,7 @@ is. The default folder is romfs-mods next to romfs-index.bin (the runtime loads 
 TOTK_ROMFS_MODS=<folder> points elsewhere, TOTK_ROMFS_MODS=0 turns it off. exefs code is never copied: a Switch
 plugin cannot run in the recompiled game; it is reported.
 
-    python -I tools/mod_overlay.py "F:/mods/Pokemon_Compass" --romfs game/romfs --out build/game/romfs-mods
+    python -I tools/mod_overlay.py "path/to/Pokemon_Compass" --romfs game/romfs --out build/game/romfs-mods
 
 Several mods: later ones win for a file two of them change. Standard library only.
 """

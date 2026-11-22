@@ -1,6 +1,6 @@
 # PokiNative Launcher for Linux
 
-This separate Linux launcher uses Avalonia. The 0.4.6 release uses one x86-64 AppImage, `PokiNative-0.4.6-linux-x86_64.AppImage`, for desktop Linux and Steam Deck; there is no separate Deck binary. A local build also creates a complete folder archive for testing, but the release publishes only the AppImage and its SHA-256 file.
+This separate Linux launcher uses Avalonia. The 0.4.6.1 release uses one x86-64 AppImage, `PokiNative-0.4.6.1-linux-x86_64.AppImage`, for desktop Linux and Steam Deck; there is no separate Deck binary. A local build also creates a complete folder archive for testing, but the release publishes only the AppImage and its SHA-256 file.
 
 The launcher builds and repairs the native Linux game from your own dumps, starts an existing installation, manages graphics settings and saves, and shows the build log. Home uses the existing edition artwork and logos. The interface includes separate Controls, Update, Saves, and Settings pages.
 
@@ -11,13 +11,13 @@ The launcher builds and repairs the native Linux game from your own dumps, start
 This release requires x86-64 Linux with glibc 2.38 or newer, such as Ubuntu 24.04 or newer. The minimum comes from the bundled SDL3 library. Make the AppImage executable:
 
 ```sh
-chmod +x PokiNative-0.4.6-linux-x86_64.AppImage
+chmod +x PokiNative-0.4.6.1-linux-x86_64.AppImage
 ```
 
 Then start it:
 
 ```sh
-./PokiNative-0.4.6-linux-x86_64.AppImage
+./PokiNative-0.4.6.1-linux-x86_64.AppImage
 ```
 
 Developers testing a locally built folder package should extract the entire archive and start `linux-x64/KarPur-Launcher-Linux`. Keep `linux-x64/payload.zip` beside the executable. A launcher copied on its own from `bin/Release` cannot install the game. The folder archive is not a separate public release download.
@@ -25,7 +25,7 @@ Developers testing a locally built folder package should extract the entire arch
 If your system cannot mount AppImages with FUSE, use the extraction fallback:
 
 ```sh
-./PokiNative-0.4.6-linux-x86_64.AppImage --appimage-extract-and-run
+./PokiNative-0.4.6.1-linux-x86_64.AppImage --appimage-extract-and-run
 ```
 
 ## Set up the game
@@ -48,13 +48,15 @@ The Linux release includes `recomplauncher.json` both at the AppImage root and b
 
 The **Controls** page can disable the preset and change stick and camera options. Actual Deck input still needs to be checked on the device; the local Linux tests have no Steam Deck controller.
 
+The launcher itself supports SDL-mapped controllers. Use the D-pad or left stick to move through the sidebar, press the controller's confirm button to enter a page or activate the focused button, choice, or slider, and press **Start** to launch the game from anywhere. On Home, press confirm to focus **Play**, then press confirm again to launch; **B** returns to the sidebar, and **LB/RB** switch pages. The confirm button is the standard bottom face button (Xbox A, Nintendo Switch B, or PlayStation Cross). Controller input is ignored until the launcher is focused and all buttons have been released, preventing a held button from triggering an action when the window opens. Typing paths and choosing files still require a keyboard and mouse.
+
 ## Updates
 
 **Update** checks public GitHub releases for a Linux AppImage. When one is available, the launcher can download it, verify its SHA-256 file when provided, and install a runnable copy in the game folder. Restart the launcher afterwards. Until a Linux AppImage is published, the page says so.
 
-## 0.4.6 release status
+## 0.4.6.1 release status
 
-The `0.4.6` tag starts the GitHub Actions build. After checks pass, Actions creates a **draft** release with one Windows launcher, one Linux x86-64 AppImage, and their SHA-256 files. The draft stays unpublished until the Windows scan and RecompLauncher review are complete.
+The `0.4.6.1` tag starts the GitHub Actions build. After checks pass, Actions creates a **draft** release with one Windows launcher, one Linux x86-64 AppImage, and their SHA-256 files. The draft stays unpublished until the Windows scan and RecompLauncher review are complete.
 
 ## Settings and saves
 
@@ -85,12 +87,12 @@ python3 tools/make_appimage.py
 To put a test build outside the source tree and skip launching its built-in self-checks, pass an external output directory:
 
 ```sh
-python3 tools/make_appimage.py --out /mnt/c/Users/Admin/Downloads/PokiNative-0.4.6-test/linux --skip-self-check
+python3 tools/make_appimage.py --out /mnt/c/Users/Admin/Downloads/PokiNative-0.4.6.1-test/linux --skip-self-check
 ```
 
 The script downloads pinned Python, SDL3, Zig, and AppImage components with SHA-256 verification, builds the native helper programs, and publishes the launcher with its .NET runtime. The AppImage, checksums, and complete folder package are written to `dist/linux` by default, or to the directory passed to `--out`. With `--out`, .NET intermediates also stay there. `--skip-self-check` avoids launching the built launcher or AppImage. The source package comes from the project's source file list. Game files, generated game code, and ordinary build outputs are excluded, except for explicitly required helper programs built for Linux.
 
-The same build works under WSL2. The Linux interface lives in `launcher-linux/` and reuses only the existing launcher's platform-independent INI reader. Mod management and controller navigation within the launcher itself are still open work.
+The same build works under WSL2. The Linux interface lives in `launcher-linux/` and reuses only the existing launcher's platform-independent INI reader. Controller navigation is supported in the launcher; mod management remains open work.
 
 Before this work, the native Violet runtime had no confirmed full Linux playthrough. Launcher checks with synthetic data do not replace a real playthrough. Verified build results are recorded in `docs/progress.md`.
 

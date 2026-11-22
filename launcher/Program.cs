@@ -7,7 +7,7 @@ static class Program
 {
     // The launcher's version (KarPurLauncher.csproj <Version>), shown top left and compared with GitHub releases.
     public static readonly Version Current = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 1, 0);
-    public static string Version => $"{Current.Major}.{Current.Minor}.{Current.Build}";
+    public static string Version => Current.Revision > 0 ? Current.ToString(4) : Current.ToString(3);
 
     public static string? PreviewColour;
     public static bool DesignCheck;   // --shot: a picture of the window only, nothing else runs

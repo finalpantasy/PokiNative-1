@@ -73,14 +73,14 @@ Die optionale NVIDIA-DLSS-DLL wird nur nach Klick auf den Button heruntergeladen
 - **Launcher bauen:** `tools/make_launcher.py`. Das braucht das .NET 10 SDK, den Shader-Übersetzer und hactool. Die Version steht in `launcher/KarPurLauncher.csproj`.
 - **Bau-Skript:** `tools/setup_build.py`. Es lässt sich auch ohne Launcher starten. Es baut nur Schritte nach, deren Ergebnis fehlt oder deren Eingabedateien sich geändert haben (`STEP_INPUTS`).
 - **Versionen der Downloads:** `tools/launcher_pins.py` (Python) und `tools/toolchain_msys2.py pin` (Compiler) legen sie fest.
-- **Update veröffentlichen:** Für 0.4.6 den Tag `0.4.6` pushen. `.github/workflows/build.yml` prüft den Quellcode, baut Windows- und Linux-Launcher und legt nach erfolgreichem Build einen GitHub-Entwurf mit SHA-256-Dateien an. Den Entwurf erst veröffentlichen, wenn der konkrete Windows-Build auf Virenmeldungen geprüft wurde und RecompLauncher ihn freigibt.
+- **Update veröffentlichen:** Für 0.4.6.1 den Tag `0.4.6.1` pushen. `.github/workflows/build.yml` prüft den Quellcode, baut Windows- und Linux-Launcher und legt nach erfolgreichem Build einen GitHub-Entwurf mit SHA-256-Dateien an. Den Entwurf erst veröffentlichen, wenn der konkrete Windows-Build auf Virenmeldungen geprüft wurde und RecompLauncher ihn freigibt.
 - **Menü-Liste:** `tools/data/ui_patch_violet_4.0.0.txt` ist die Liste hinter den PC-Einstellungen im Spielmenü. Sie enthält nur Größen, Prüfsummen, Positionen, unsere Werte und unsere Texte.
 
 ## Lokale Vorschau in preview2
 
 Die Test-Version entsteht mit `tools/make_launcher.py --test` unter `launcher\bin\preview2\KarPur-Launcher.exe`; `dist` bleibt für Veröffentlichungen frei. Beim Start aus diesem Ordner wählt sie den aktuellen Repo-Stand als Target folder und verwendet dessen `build\game\karpur.exe`. Alle Setup-Pfade sowie Build, Repair und Update bleiben normal bedienbar. Der Target folder kann manuell geändert werden: ein Quell-Repo wird direkt verwendet, ein Installationsziel enthält wie bisher den Unterordner `KarPur`.
 
-Für einen Test-Build außerhalb des Quellordners: `tools/make_launcher.py --out "C:\PokiNative\tests\0.4.6"`. Der Launcher und `recomplauncher.json` liegen dann direkt dort; Payload und .NET-Zwischendateien liegen im Unterordner `.build`. Zusätzlich erzeugt der Build `KarPur-Launcher-Windows-x86_x64.exe` samt SHA-256-Datei; `KarPur-Launcher.exe` bleibt für RecompLauncher und bestehende Installationen erhalten.
+Für einen Test-Build außerhalb des Quellordners: `tools/make_launcher.py --out "C:\PokiNative\tests\0.4.6.1"`. Der Launcher und `recomplauncher.json` liegen dann direkt dort; Payload und .NET-Zwischendateien liegen im Unterordner `.build`. Zusätzlich erzeugt der Build `KarPur-Launcher-Windows-x86_x64.exe` samt SHA-256-Datei; `KarPur-Launcher.exe` bleibt für RecompLauncher und bestehende Installationen erhalten.
 
 Die Windows-Manifestdatei im Projektstamm verweist auf den tatsächlichen Windows-Spielstandordner `{install}/../KarPur/build/profile/save`. Der Linux-Paketbau erzeugt eine eigene Manifestkopie mit `{install}/build/profile/save`, da der Linux-Launcher direkt unter `{install}` baut. `saves`-Einträge in RecompLauncher sind alle aktive Speicherorte und keine Fallback-Liste; alternative Plattformpfade gehören daher nicht gemeinsam in dasselbe Array.
 

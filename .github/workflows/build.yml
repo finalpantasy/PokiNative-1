@@ -3,7 +3,7 @@ name: Build PokiNative 0.4.6.2
 on:
   push:
     tags:
-      - "0.4.6.2"
+      - "[0-9]*"
   workflow_dispatch:
 
 permissions:

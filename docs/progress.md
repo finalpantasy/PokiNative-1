@@ -1,5 +1,24 @@
 # Progress
 
+## Separating test launcher builds from `main` (2026-11-22)
+
+- Updated the launcher workflow to build Windows and Linux artifacts for pushes to `main` or `testing`, pull requests targeting `testing`, and pushes of any tag. Build artifacts are named with the Actions run number and commit SHA unless the tag has a release-specific name.
+- The `0.4.6.1` tag still creates or refreshes its draft release. The new `pre0.4.6.2` tag will build both launchers and publish a GitHub pre-release after validation succeeds.
+- Windows and Linux launcher version metadata is set to `0.4.6.2` on `testing`; Linux package names follow that version. The stable `main` branch remains at `0.4.6.1`.
+- Created `testing` from the current `main` commit; the branch is published to GitHub. The workflow, version, and progress-note changes are staged locally but not committed or pushed, so the updated workflow has not run yet.
+- Diagnosis after the attempted `pre0.4.6.2` tag: GitHub had no remote ref or Actions run for that exact tag. The remote `testing` workflow still listened only for `0.4.6.1`; a separate placeholder `build-on-tag.yml` listens for `v*`, not `pre0.4.6.2`, and contains no build commands. The local branch was 14 commits behind `origin/testing` and has now been fast-forwarded to match it without losing the staged changes.
+- Next: commit and push the staged changes in GitHub Desktop. Merge desired PRs into `testing` and test their Actions artifacts. Once a specific commit is ready for wider testing, push tag `pre0.4.6.2` to that commit; after the automated validation and builds pass, Actions publishes the pre-release. Do not merge `testing` to `main` until the candidate is approved.
+
+## Triage report for issue #26 (2026-11-22)
+
+- The maintainer reports that the `memory = import` and `compute_vram = 0` tests did not improve the issue: trees remain low-poly and flash, and buildings and ground textures can still be missing. These settings are not a confirmed workaround.
+- The tests were run on Linux, separately, in the same save and area; no startup log was captured. The maintainer uses Steam Deck Game Mode and does not use a terminal. They followed the prior INI instructions, but the memory test did not set `TOTK_SHADOW=0` and `TOTK_MEMORY=import`, so it did not test imported guest memory: Linux defaults to shadow storage, and `memory = import` alone cannot disable it. The issue's step 5 also omits the `compute_vram = 0` line.
+- After setting both overrides through Steam's Launch Options, the maintainer reports about 2 FPS and 530 ms frame latency and attributes the slowdown to `TOTK_SHADOW=0`, not memory mode. The combined command did not isolate the variables, and no startup log is available; do not treat this as evidence that `TOTK_MEMORY=import` alone causes the slowdown. Stop this test and restore the usual launch settings.
+- Reviewed the linked Steam Deck log from #16: UMA with normal `mem: mode shadow`; 13 Oodle-packed `1/30` constants were rewritten to `1/40`, and the decoder hook remained active through 12,288 decodes / 611.2 MiB with zero wanted files found and zero failures. The source comments say tree flicker was seen while this Oodle redirect remained on; `TOTK_SCRIPT_STEP=0` disables the global script-step scan/patch. This is a more specific, untried lead than another memory or detail setting.
+- The #16 reporter already found no flicker improvement from `TOTK_LOD=1`, submit sync, GPL, fresh shader/pipeline caches, or people/Pokémon detail 4/8 and 10/8. The maintainer separately saw less flicker at Pokémon detail 20 m, but that is a Violet-specific setting and does not explain missing textures.
+- The maintainer reports the suggested Minus+Plus menu shortcut does nothing in Steam Deck Game Mode; do not rely on that route.
+- Next: after restoring normal launch settings, run one reversible Game Mode A/B with only `TOTK_SCRIPT_STEP=0` in Steam Launch Options, comparing the same save and area for tree flicker, missing textures, and FPS. This may affect indoor fixed-step timing; clear the option to restore the prior behavior. Do not repeat the `TOTK_SHADOW=0` test.
+
 ## Preparing the 0.4.6.1 launcher release (2026-11-21)
 
 - Bumped Windows and Linux launcher metadata and user-facing version strings to 0.4.6.1. Updated the release workflow to build both launchers and create a draft release when the `0.4.6.1` tag is pushed.

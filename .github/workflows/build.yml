@@ -1,9 +1,15 @@
-name: Build PokiNative 0.4.6.1
+name: Build PokiNative launchers
 
 on:
   push:
+    branches:
+      - main
+      - testing
     tags:
-      - "0.4.6.1"
+      - "**"
+  pull_request:
+    branches:
+      - testing
   workflow_dispatch:
 
 permissions:
@@ -62,7 +68,7 @@ jobs:
       - name: Upload Windows release files
         uses: actions/upload-artifact@v4
         with:
-          name: PokiNative-0.4.6.1-Windows-x64
+          name: ${{ github.ref == 'refs/tags/0.4.6.1' && 'PokiNative-0.4.6.1-Windows-x64' || github.ref == 'refs/tags/pre0.4.6.2' && 'PokiNative-pre0.4.6.2-Windows-x64' || format('PokiNative-test-{0}-{1}-Windows-x64', github.run_number, github.sha) }}
           path: |
             dist/KarPur-Launcher-Windows-x86_x64.exe
             dist/KarPur-Launcher-Windows-x86_x64.exe.sha256
@@ -95,10 +101,10 @@ jobs:
       - name: Upload Linux release files
         uses: actions/upload-artifact@v4
         with:
-          name: PokiNative-0.4.6.1-Linux-x86_64
+          name: ${{ github.ref == 'refs/tags/0.4.6.1' && 'PokiNative-0.4.6.1-Linux-x86_64' || github.ref == 'refs/tags/pre0.4.6.2' && 'PokiNative-pre0.4.6.2-Linux-x86_64' || format('PokiNative-test-{0}-{1}-Linux-x86_64', github.run_number, github.sha) }}
           path: |
-            dist/linux/PokiNative-0.4.6.1-linux-x86_64.AppImage
-            dist/linux/PokiNative-0.4.6.1-linux-x86_64.AppImage.sha256
+            dist/linux/PokiNative-*-linux-x86_64.AppImage
+            dist/linux/PokiNative-*-linux-x86_64.AppImage.sha256
           if-no-files-found: error
 
   create-draft-release:
@@ -139,4 +145,44 @@ jobs:
           else
             gh release create "$tag" release-assets/* --draft --verify-tag \
               --title "PokiNative $tag" --notes-file docs/releases/0.4.6.1.md
+          fi
+
+  create-prerelease:
+    if: github.event_name == 'push' && github.ref == 'refs/tags/pre0.4.6.2'
+    needs:
+      - build-windows
+      - build-linux
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Windows files
+        uses: actions/download-artifact@v4
+        with:
+          name: PokiNative-pre0.4.6.2-Windows-x64
+          path: release-assets
+      - name: Download Linux files
+        uses: actions/download-artifact@v4
+        with:
+          name: PokiNative-pre0.4.6.2-Linux-x86_64
+          path: release-assets
+      - name: Create or refresh the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          release_state="$(gh release view "$tag" --json isDraft,isPrerelease --jq '[.isDraft,.isPrerelease] | @tsv' 2>/dev/null || true)"
+          if [ "$release_state" = $'false\ttrue' ]; then
+            gh release edit "$tag" --prerelease --title "PokiNative $tag" \
+              --notes-file docs/releases/pre0.4.6.2.md
+            gh release upload "$tag" release-assets/* --clobber
+          elif [ -n "$release_state" ]; then
+            echo "Refusing to modify an existing non-prerelease or draft release: $tag" >&2
+            exit 1
+          else
+            gh release create "$tag" release-assets/* --prerelease --verify-tag \
+              --title "PokiNative $tag" --notes-file docs/releases/pre0.4.6.2.md
           fi

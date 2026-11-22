@@ -8,9 +8,9 @@ namespace KarPurLinux;
 
 static class Program
 {
-    public const string Version = "0.4.6.1";
+    public const string Version = "0.4.6.2";
     // The internal revision also replaces earlier Deck test launchers when pinning the AppImage.
-    public const string BuildRevision = "0.4.6.1";
+    public const string BuildRevision = "0.4.6.2";
     [STAThread]
     public static int Main(string[] args)
     {

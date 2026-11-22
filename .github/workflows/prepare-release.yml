@@ -1,0 +1,90 @@
+name: Prepare Release (bump version, notes, tag)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version, digits and dots only (example: 0.4.7)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate the version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+){1,3}$ ]]; then
+            echo "Version must be digits and dots, like 0.4.7" >&2
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "Tag $VERSION already exists" >&2
+            exit 1
+          fi
+
+      - name: Bump version in both launcher projects
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          for f in launcher/KarPurLauncher.csproj launcher-linux/KarPurLauncher.Linux.csproj; do
+            test -f "$f"
+            sed -i -E "s|<Version>[^<]*</Version>|<Version>$VERSION</Version>|" "$f"
+            grep -n "<Version>" "$f"
+          done
+          if [ -f VERSION ]; then
+            echo "$VERSION" > VERSION
+          fi
+
+      - name: Write the release notes from the commits
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p docs/releases
+          last_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          {
+            echo "# PokiNative $VERSION"
+            echo
+            echo "## Changes"
+            echo
+            if [ -n "$last_tag" ]; then
+              git log "$last_tag"..HEAD --no-merges --pretty='- %s (%h)'
+            else
+              git log --no-merges --pretty='- %s (%h)' -n 50
+            fi
+          } > "docs/releases/$VERSION.md"
+          cat "docs/releases/$VERSION.md"
+
+      - name: Commit, tag and push
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A launcher launcher-linux docs/releases
+          if [ -f VERSION ]; then git add VERSION; fi
+          git commit -m "Release $VERSION: bump version and add release notes"
+          git tag "$VERSION"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "$VERSION"
+
+      - name: Start the build for the new tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh workflow run build-launchers.yml --ref "$VERSION"

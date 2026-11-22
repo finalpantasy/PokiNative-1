@@ -19,6 +19,7 @@ static struct {
     VkImage depth_image;
     uint32_t dw, dh, w, h;
     float proj[4];
+    float cam[2];                        // 1 / p00, 1 / p11: view x and y per NDC unit at distance 1
     VkImage image[2];
     VmaAllocation alloc[2];
     VkImageView view[2];
@@ -51,12 +52,14 @@ void vk_lighting_note_scene(const VkExec *ex, const float proj[16]) {
     if (!(ex->depth.img->usage & VK_IMAGE_USAGE_SAMPLED_BIT)) return;
     for (int i = 0; i < 16; ++i) if (!isfinite(proj[i])) return;
     if (fabsf(proj[11]) < 1e-6f || fabsf(proj[14]) < 1e-6f) return;
+    if (fabsf(proj[0]) < 1e-6f || fabsf(proj[5]) < 1e-6f) return;
     L.depth = ex->depth.img;
     L.depth_image = ex->depth.image;
     L.depth_format = ex->depth.format;
     L.dw = ex->depth.width, L.dh = ex->depth.height;
     L.proj[0] = proj[10], L.proj[1] = proj[14], L.proj[2] = proj[11];
     L.proj[3] = nvn_depth_minus_w() ? 1.0f : 0.0f;
+    L.cam[0] = 1.0f / fabsf(proj[0]), L.cam[1] = 1.0f / fabsf(proj[5]);
     L.have_depth = 1;
 }
 
@@ -116,7 +119,7 @@ static int init(VkCtx *c) {
     VkDescriptorSetLayoutCreateInfo di = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, .bindingCount = 3, .pBindings = b};
     if (vkCreateDescriptorSetLayout(c->device, &di, NULL, &L.dsl) != VK_SUCCESS) return 0;
-    VkPushConstantRange pr = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 32};
+    VkPushConstantRange pr = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 48};
     VkPipelineLayoutCreateInfo li = {.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .setLayoutCount = 1, .pSetLayouts = &L.dsl, .pushConstantRangeCount = 1, .pPushConstantRanges = &pr};
     if (vkCreatePipelineLayout(c->device, &li, NULL, &L.layout) != VK_SUCCESS) return 0;
@@ -201,7 +204,8 @@ void vk_lighting_after_draw(VkExec *ex, uint32_t fs) {
             .dstBinding = (uint32_t)i, .descriptorCount = 1,
             .descriptorType = i == 2 ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .pImageInfo = &info[i]};
-    float pc[8] = {L.proj[0], L.proj[1], L.proj[2], L.proj[3], (float)w, (float)h, (float)L.ao, (float)L.gi};
+    float pc[12] = {L.proj[0], L.proj[1], L.proj[2], L.proj[3], (float)w, (float)h, (float)L.ao, (float)L.gi,
+                    L.cam[0], L.cam[1], (float)(L.frames % 64), 0.0f};
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, L.pipeline);
     rec_push(L.push, cb, VK_PIPELINE_BIND_POINT_COMPUTE, L.layout, 0, 3, wr);
     vkCmdPushConstants(cb, L.layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof pc, pc);

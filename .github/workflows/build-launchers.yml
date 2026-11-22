@@ -34,11 +34,52 @@ jobs:
       - name: Lifter differential tests
         run: python tests/lifter/test_lifter.py
 
+  notes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate the change list
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          prev="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+          {
+            echo "# PokiNative ${tag}"
+            echo
+            echo "## Changes"
+            echo
+            if [ -n "$prev" ]; then
+              git log "${prev}..${tag}" --no-merges --pretty='- %s (%h)' 2>/dev/null \
+                || git log "${prev}..HEAD" --no-merges --pretty='- %s (%h)'
+            else
+              git log --no-merges --pretty='- %s (%h)' -n 50
+            fi
+          } > release-notes.md
+          cat release-notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
   build-windows:
     needs: validate
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+      - name: Set version from the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME}"
+          for f in launcher/KarPurLauncher.csproj launcher-linux/KarPurLauncher.Linux.csproj; do
+            sed -i -E "s#<Version>[^<]*</Version>#<Version>${VERSION}</Version>#" "$f"
+            grep -n "<Version>" "$f"
+          done
+          if [ -f VERSION ]; then echo "$VERSION" > VERSION; fi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
@@ -75,6 +116,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set version from the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME}"
+          for f in launcher/KarPurLauncher.csproj launcher-linux/KarPurLauncher.Linux.csproj; do
+            sed -i -E "s#<Version>[^<]*</Version>#<Version>${VERSION}</Version>#" "$f"
+            grep -n "<Version>" "$f"
+          done
+          if [ -f VERSION ]; then echo "$VERSION" > VERSION; fi
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
@@ -105,13 +157,13 @@ jobs:
 
   publish-release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-windows, build-linux]
+    needs: [notes, build-windows, build-linux]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Download all build files
+      - name: Download build files and notes
         uses: actions/download-artifact@v4
         with:
           path: release-assets
@@ -123,22 +175,52 @@ jobs:
         run: |
           set -euo pipefail
           tag="$GITHUB_REF_NAME"
-          ls -l release-assets
+          mv release-assets/release-notes.md ./release-notes.md
 
-          # Use docs/releases/<tag>.md as notes if it exists, else auto-generate
+          # A hand-written docs/releases/<tag>.md wins over the generated list
           if [ -f "docs/releases/$tag.md" ]; then
-            notes=(--notes-file "docs/releases/$tag.md")
+            notes_file="docs/releases/$tag.md"
           else
-            notes=(--generate-notes)
+            notes_file="release-notes.md"
           fi
+
+          ls -l release-assets
 
           draft_state="$(gh release view "$tag" --json isDraft --jq '.isDraft' 2>/dev/null || true)"
           if [ "$draft_state" = "false" ]; then
             echo "Refusing to modify an already published release: $tag" >&2
             exit 1
           elif [ "$draft_state" = "true" ]; then
+            gh release edit "$tag" --notes-file "$notes_file"
             gh release upload "$tag" release-assets/* --clobber
           else
             gh release create "$tag" release-assets/* --draft \
-              --verify-tag --title "PokiNative $tag" "${notes[@]}"
+              --verify-tag --title "PokiNative $tag" --notes-file "$notes_file"
           fi
+
+  save-version-bump:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: publish-release
+    runs-on: ubuntu-24.04
+    continue-on-error: true   # a failure here never affects the release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: testing
+      - name: Commit the new version to testing
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME}"
+          for f in launcher/KarPurLauncher.csproj launcher-linux/KarPurLauncher.Linux.csproj; do
+            sed -i -E "s#<Version>[^<]*</Version>#<Version>${VERSION}</Version>#" "$f"
+          done
+          if [ -f VERSION ]; then echo "$VERSION" > VERSION; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A launcher launcher-linux
+          if [ -f VERSION ]; then git add VERSION; fi
+          git diff --cached --quiet || git commit -m "Set version to ${VERSION}"
+          git push origin HEAD:testing

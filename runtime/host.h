@@ -201,6 +201,10 @@ void data_watch_init(void);                                // KarPur data_watch.
 int data_patch_ui_loaded(void);                            // data_patch.c: the UI list (game/ui_patch.txt) is in use
 void lua_mod_init(void);                                   // KarPur lua_mod.c: from rt_patches_init
 void lua_mod_command(const char *text, uint64_t n);        // lua_mod.c: a guest debug string; acts on KARPUR_CMD lines
+uint64_t lua_mod_last_state(void);                         // lua_mod.c: the newest Lua state whose main script ran, or 0
+int lua_mod_eval_int(Cpu *c, uint64_t L, const char *src, int64_t *out);   // lua_mod.c: run src in L, integer result
+void compass_init(void);                                   // compass.c: host entries of set compass (rt_patches_init)
+void compass_command(const char *cmd, size_t len);         // compass.c: "KARPUR_CMD compass <cmd>" from Lua
 void frame_dt_init(void);                                  // KarPur frame_dt.c: from rt_patches_init
 void frame_dt_present(void);                               // KarPur frame_dt.c: before each present
 void coverage_present(uint64_t frame);                     // KarPur coverage.c: TOTK_COVERAGE, before each present

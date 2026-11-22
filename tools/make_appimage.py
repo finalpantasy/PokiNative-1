@@ -219,6 +219,8 @@ def main():
         publish_args += ['--artifacts-path', DIST / '.build' / 'dotnet']
     publish_args += ['-o', publish]
     run(*publish_args)
+    for name in ('libSDL3.so', 'libSDL3.so.0'):
+        shutil.copy2(ROOT / 'toolchain' / 'linux' / 'lib' / name, publish / name)
     manifest = json.loads((ROOT / 'recomplauncher.json').read_text(encoding='utf-8'))
     # Save locations are actual folders, not fallbacks: the Linux launcher builds directly under {install}.
     manifest['saves'] = ['{install}/build/profile/save']

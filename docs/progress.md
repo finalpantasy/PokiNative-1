@@ -1,5 +1,12 @@
 # Progress
 
+## Linux launcher controller navigation (2026-11-21)
+
+- Added SDL3 gamepad input to the Linux launcher. The D-pad and left stick navigate pages and controls; the standard bottom-face confirm button activates the focused control; B returns from a page; LB/RB change pages; Start launches or opens setup. Input waits for a neutral controller state after focus or connection changes so a held button cannot launch accidentally.
+- Packaged SDL3 beside the Linux launcher, added self-checks for the native library and input edge/dead-zone behavior, and documented the Linux launcher controls. Windows already had XInput navigation and was left unchanged.
+- The Linux launcher project builds on this macOS host with .NET SDK 11.0.100: 0 warnings and 0 errors. The AppImage and real-controller checks still need Linux hardware. The ZIP snapshot was matched against GitHub main at `945db69`; only the six controller-related files differed.
+- Next: build and run the Linux AppImage on Linux, then verify actual controller navigation and launch behavior on desktop Linux and Steam Deck.
+
 ## Preparing the 0.4.6 GitHub Actions draft (2026-11-21)
 
 - Kept the published 0.4.5 release and tag unchanged; no 0.4.6 tag existed when this work began.

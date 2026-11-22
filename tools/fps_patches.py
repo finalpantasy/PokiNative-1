@@ -43,6 +43,15 @@ Sets (switched with their TOTK_ variable):
            then loads and runs the runtime's own Lua in the same state. Checked: both calls are there, and
            main+0xe382a0 calls lua_load (main+0x232e0), whose parser function references "attempt to load a %s chunk".
 
+  compass  (off by default; on for a mod pack whose patch-sets.txt names it, runtime/romfs.c, or TOTK_COMPASS_HOOKS=1)
+           the native parts of Pokemon Compass's exefs plugin (docs/compass-exefs.md), which cannot run here:
+           main+0x1107af4 (bl main+0x3b420, the Lua state the plugin keeps), main+0x1781b80 (bl main+0x1781ce8, the
+           EXP gain: level cap and EXP rate) and main+0x1141b9c (bl main+0xe7e274, the value the plugin's Lua switches
+           override) go to host functions at patch page +0xf00, +0xf10 and +0xf30 (runtime/compass.c); main+0x114e990
+           (in the party-order function main+0x114e98c, after its prologue saved x30) gets a call to +0xf20 after its
+           own instruction (compass.update_battle_order); main+0x183b3e4 `movz w8, #0x44e1, lsl 16` (1800.0, the food
+           power time the function stores at +0x4c) becomes 3600.0. Checked: each call's target and each word.
+
 Tried and dropped: the 30 fps frame time and vsync count in main+0x2b79f60 (no effect on the interval or the speed).
 
 For Violet 4.0.0, tools/sv_host_targets.py appends Render-scale and camera sites to this baseline table.
@@ -180,6 +189,10 @@ LUA_LOADBUFFERX = 0xe382a0
 LUA_LOAD = 0x232e0
 LUA_F_PARSER = 0x28580        # references "attempt to load a %s chunk (mode is '%s')"
 PAGE_LUA_HOST = 0xfc0         # patch page offset of the host function (runtime/lua_mod.c)
+# Pokemon Compass (docs/compass-exefs.md): (site, bl target, patch page host offset); runtime/compass.c
+COMPASS_CALLS = ((0x1107af4, 0x3b420, 0xf00), (0x1781b80, 0x1781ce8, 0xf10), (0x1141b9c, 0xe7e274, 0xf30))
+COMPASS_ORDER = (0x114e98c, 0xa9bc7bfd, 0x114e990, 0xf9000bf7, 0xf20)   # stp x29, x30 / str x23: call after it
+COMPASS_FOOD = (0x183b3e4, 0x52a89c28, 0x52a8ac28, (0x29080801, 0x29092003))   # 1800.0 -> 3600.0, then the stp's
 
 
 def bl_target(m, a):
@@ -289,6 +302,23 @@ def main():
         words_of[LUA_RUN_SITE] = SITES[-1][5]
     else:
         dropped.add('lua_mod')
+    # compass: optional set, left out whole when any site differs
+    fn, fn_word, site, site_word, host = COMPASS_ORDER
+    food, food_word, food_new, food_next = COMPASS_FOOD
+    compass_ok = (all(bl_target(m, base + s) == base + t for s, t, _ in COMPASS_CALLS) and
+                  m.word(base + fn) == fn_word and m.word(base + site) == site_word and m.word(base + food) == food_word
+                  and tuple(m.word(base + food + 4 * (k + 1)) for k in range(2)) == food_next)
+    print(f'compass: {len(COMPASS_CALLS)} calls, party order and food time: {"ok" if compass_ok else "MISMATCH"}')
+    if compass_ok:
+        for s, _, h in COMPASS_CALLS:
+            SITES.append(('compass', 'TOTK_COMPASS_HOOKS', 0, s, m.word(base + s), [f'@pagebl:{h:x}']))
+            words_of[s] = SITES[-1][5]
+        SITES.append(('compass', 'TOTK_COMPASS_HOOKS', 0, site, site_word, [site_word, f'@pagebl:{host:x}']))
+        words_of[site] = SITES[-1][5]
+        SITES.append(('compass', 'TOTK_COMPASS_HOOKS', 0, food, food_word, [food_new]))
+        words_of[food] = SITES[-1][5]
+    else:
+        dropped.add('compass')
     if bad:
         sys.exit(f'{bad} sites differ from what this table expects (another game version?): nothing written')
     for name in sorted(dropped):

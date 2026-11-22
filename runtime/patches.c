@@ -58,6 +58,7 @@ void rt_patches_init(void) {
     lod_init();        // lod.c: the LOD bias of set lod_bias
     data_watch_init(); // data_watch.c: the host entry of set data_watch (before hostfn_seal)
     lua_mod_init();    // lua_mod.c: the host entry of set lua_mod (before hostfn_seal)
+    compass_init();    // compass.c: the host entries of set compass (before hostfn_seal)
     res_sv_wide_init(); // resolution.c: perspective camera aspect at ultrawide output
 #endif
 }

@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "cfg.h"
+#include "fs.h"
 #include "host.h"
 #include "platform/platform.h"
 #include "ui/menu.h"
@@ -120,11 +121,51 @@ static void run_mod(Cpu *c, uint64_t L) {
     free(own);
 }
 
+// TOTK_LUA_PRELUDE=<file>: Lua that runs in each new Lua state just before the game's main script, with the game's
+// luaL_loadbufferx and lua_pcallk, so the script finds what it defines. For a RomFS mod whose script expects globals a
+// Switch exefs plugin would register (Pokemon Compass: tools/compass_prelude.lua), which cannot run here. Its error,
+// if any, goes to the log; the stack top is put back as it was (the game's chunk stays where the game put it).
+static void run_prelude(Cpu *c, uint64_t L) {
+    static char *src;
+    static uint64_t size;
+    static int tried;
+    static char pack_file[2200];
+    const char *file = cfg_get("TOTK_LUA_PRELUDE");
+    // A mod pack's prelude.lua when TOTK_LUA_PRELUDE is unset (romfs.c rt_mod_pack)
+    if (!file && romfs_mod_pack_dir() &&
+        snprintf(pack_file, sizeof pack_file, "%s/prelude.lua", romfs_mod_pack_dir()) < (int)sizeof pack_file &&
+        plat_file_exists(pack_file))
+        file = pack_file;
+    if (!file || !*file) return;
+    if (!tried) {
+        tried = 1;
+        src = (char *)plat_file_read(file, &size);
+        rt_log(src ? "lua mod: prelude %s (%llu bytes) runs before each main script" : "lua mod: cannot read prelude %s",
+               file, (unsigned long long)size);
+    }
+    if (!src) return;
+    uint64_t depth = *(const uint64_t *)(uintptr_t)(L + LUA_TOP) - *(const uint64_t *)(uintptr_t)(L + LUA_STACK);
+    uint64_t st = rt_call(c, base + LUA_LOADBUFFERX, 5, L, (uint64_t)(uintptr_t)src, size,
+                          (uint64_t)(uintptr_t)"=prelude", 0);
+    if (!st) st = rt_call(c, base + LUA_PCALLK, 6, L, 0, 0, 0, 0, 0);
+    if (st) {
+        static char err[4096];
+        top_string(L, err, sizeof err);
+        rt_log("lua mod: prelude failed (%llu): %s", (unsigned long long)st, err);
+    }
+    *(uint64_t *)(uintptr_t)(L + LUA_TOP) = *(const uint64_t *)(uintptr_t)(L + LUA_STACK) + depth;
+}
+
 // The game builds several Lua states (one per script host; six in a run to the field), each running the main script
 // once: the runtime's Lua runs once in each, numbered in the log.
 static void host_run_main(Cpu *c) {
     uint64_t a[6];
     memcpy(a, c->x, sizeof a);
+    plat_mutex_lock(&lock);
+    int known_state = 0;
+    for (int i = 0; i < nstates; i++) known_state |= states[i] == a[0];
+    plat_mutex_unlock(&lock);
+    if (!known_state) run_prelude(c, a[0]);
     uint64_t r = rt_call(c, base + LUA_PCALLK, 6, a[0], a[1], a[2], a[3], a[4], a[5]);
     plat_mutex_lock(&lock);
     int seen = 0, k = ++runs;
@@ -134,6 +175,11 @@ static void host_run_main(Cpu *c) {
     plat_mutex_unlock(&lock);
     rt_log("lua mod: the game's main script ran (run %d, state %d%s, lua_pcallk %llu)", k, idx,
            seen ? ", seen before" : "", (unsigned long long)r);
+    if (r) {   // the game's own script failed (a RomFS mod's script, say): its error message is at the stack top
+        static char err[4096];
+        top_string(a[0], err, sizeof err);
+        rt_log("lua mod: the game's main script failed: %s", err[0] ? err : "(no error string)");
+    }
     // The built-in script needs the texts and the button of the patch list (tools/pc_menu.py): without it the game
     // stays as it ships, the downloadable-content button included.
     const char *file = cfg_get("TOTK_LUA_MOD_FILE");
@@ -232,6 +278,50 @@ static void cmd_sync(const char *s, size_t len) {
     if (tv[8] == 0x03) memcpy(tv, &pos, 8);
 }
 
+uint64_t lua_mod_last_state(void) {
+    plat_mutex_lock(&lock);
+    uint64_t L = nstates ? states[nstates - 1] : 0;
+    plat_mutex_unlock(&lock);
+    return L;
+}
+
+// Runs src in L with the game's luaL_loadbufferx and lua_pcallk (one result) and reads that result as an integer (a
+// float with an integer value counts, as for lua_tointegerx). 1 when it ran and gave a number. The stack top is put
+// back as it was either way; the caller's guest registers x0-x18 change (call it where a call may clobber them, or
+// save them). For runtime/compass.c, from the game's own threads, as the Compass plugin calls Lua.
+int lua_mod_eval_int(Cpu *c, uint64_t L, const char *src, int64_t *out) {
+    if (!base || !L || L >= RT_ADDRESS_LIMIT) return 0;
+    uint64_t top0 = *(const uint64_t *)(uintptr_t)(L + LUA_TOP), base0 = *(const uint64_t *)(uintptr_t)(L + LUA_STACK);
+    uint64_t last0 = *(const uint64_t *)(uintptr_t)(L + LUA_STACK_LAST);
+    if (!(base0 && base0 <= top0 && top0 <= last0 && !((top0 - base0) & 15))) return 0;
+    uint64_t depth = top0 - base0;
+    uint64_t st = rt_call(c, base + LUA_LOADBUFFERX, 5, L, (uint64_t)(uintptr_t)src, (uint64_t)strlen(src),
+                          (uint64_t)(uintptr_t)"=compass", 0);
+    if (!st) st = rt_call(c, base + LUA_PCALLK, 6, L, 0, 1, 0, 0, 0);
+    int ok = 0;
+    uint64_t top = *(const uint64_t *)(uintptr_t)(L + LUA_TOP);
+    if (st) {
+        static int n;
+        if (__atomic_add_fetch(&n, 1, __ATOMIC_RELAXED) <= 20) {
+            char err[512];
+            top_string(L, err, sizeof err);
+            rt_log("lua mod: compass Lua failed (%llu): %s", (unsigned long long)st, err);
+        }
+    } else if (top) {
+        uint8_t tag = *(const uint8_t *)(uintptr_t)(top - 8);
+        if (tag == 0x03) {   // LUA_VNUMINT
+            memcpy(out, (const void *)(uintptr_t)(top - 16), 8);
+            ok = 1;
+        } else if (tag == 0x13) {   // LUA_VNUMFLT
+            double d;
+            memcpy(&d, (const void *)(uintptr_t)(top - 16), 8);
+            if (d == (double)(int64_t)d) *out = (int64_t)d, ok = 1;
+        }
+    }
+    *(uint64_t *)(uintptr_t)(L + LUA_TOP) = *(const uint64_t *)(uintptr_t)(L + LUA_STACK) + depth;
+    return ok;
+}
+
 void lua_mod_command(const char *text, uint64_t n) {
     static const char tag[] = "KARPUR_CMD ";
     if (n < sizeof tag - 1 || memcmp(text, tag, sizeof tag - 1)) return;
@@ -251,6 +341,8 @@ void lua_mod_command(const char *text, uint64_t n) {
         cmd_set(cmd + 4, len - 4);
     } else if (len > 5 && !memcmp(cmd, "sync ", 5)) {
         cmd_sync(cmd + 5, len - 5);
+    } else if (len > 8 && !memcmp(cmd, "compass ", 8)) {
+        compass_command(cmd + 8, len - 8);
     } else {
         rt_log("lua mod: unknown command %.*s", (int)(len < 64 ? len : 64), cmd);
     }

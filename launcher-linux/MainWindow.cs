@@ -5,6 +5,8 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using KarPurLauncher;
@@ -15,10 +17,12 @@ sealed class MainWindow : Window
 {
     readonly UserState state;
     readonly ContentControl page = new();
+    readonly ScrollViewer contentScroll = new();
     readonly TextBlock status = Text("Ready", 13, "#AFA9C9");
     readonly TextBox details = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 280 };
     readonly ProgressBar progress = new() { Height = 4, Minimum = 0, Maximum = 100 };
     readonly List<Button> navigation = [];
+    readonly List<Action> navigationPages = [];
     readonly List<string> log = [];
     readonly List<Control> operations = [];
     readonly Dictionary<string, TextBox> inputs = [];
@@ -26,6 +30,14 @@ sealed class MainWindow : Window
     readonly TextBlock brandTitle = Text("PokiNative", 25);
     readonly Button cancel = new() { Content = "Cancel", IsVisible = false };
     CancellationTokenSource? buildCancellation;
+    readonly DispatcherTimer padTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
+    LinuxGamepad? gamepad;
+    Button? homePlay;
+    int padIndex;
+    uint padHeld;
+    bool padArmed;
+    bool padInPage;
+    long padRepeatAt;
     bool busy;
     bool buildComplete;
 
@@ -76,23 +88,54 @@ sealed class MainWindow : Window
             ("Home", Home), ("Setup", Setup), ("Settings", Settings), ("Controls", Controls),
             ("Saves", Saves), ("Update", UpdatePage), ("Logs", Logs) })
         {
+            int index = navigation.Count;
             var button = new Button { Content = title, HorizontalAlignment = HorizontalAlignment.Stretch,
                 Padding = new Thickness(16, 13), Background = Brushes.Transparent, CornerRadius = new CornerRadius(9) };
-            button.Click += (_, _) => { SelectNavigation(navigation.IndexOf(button)); render(); };
+            navigationPages.Add(render);
+            button.Click += (_, _) =>
+            {
+                padIndex = index;
+                padInPage = false;
+                SelectNavigation(index);
+                render();
+            };
             navigation.Add(button); sidebar.Children.Add(button);
         }
         sidebar.Children.Add(new Border { Height = 24 });
         sidebar.Children.Add(Text("AppImage · x86_64", 12, "#9D94AF"));
+        padTimer.Tick += (_, _) => PollGamepad();
         var root = new Grid { ColumnDefinitions = new ColumnDefinitions("238,*"), RowDefinitions = new RowDefinitions("*,Auto") };
         root.Children.Add(new Border { Background = Brush.Parse("#1B1728"), Child = sidebar });
-        var scroll = new ScrollViewer { Content = page, Margin = new Thickness(32, 30, 32, 20), HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        Grid.SetColumn(scroll, 1); root.Children.Add(scroll);
+        contentScroll.Content = page;
+        contentScroll.Margin = new Thickness(32, 30, 32, 20);
+        contentScroll.HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+        Grid.SetColumn(contentScroll, 1); root.Children.Add(contentScroll);
         cancel.Click += (_, _) => buildCancellation?.Cancel();
         var footer = Stack(progress, status, cancel);
         footer.Margin = new Thickness(270, 12, 32, 20);
         Grid.SetRow(footer, 1); Grid.SetColumnSpan(footer, 2); root.Children.Add(footer);
         Content = root;
         Closing += (_, e) => { if (busy) { e.Cancel = true; Report("Cancel the build and wait for it to stop before closing the launcher."); } };
+        Closing += (_, e) =>
+        {
+            if (e.Cancel) return;
+            padTimer.Stop();
+            gamepad?.Dispose();
+            gamepad = null;
+        };
+        Opened += (_, _) =>
+        {
+            if (smoke) return;
+            gamepad = new LinuxGamepad();
+            if (!gamepad.Initialize(out string error))
+            {
+                gamepad.Dispose();
+                gamepad = null;
+                Report("Controller input unavailable: " + error);
+                return;
+            }
+            padTimer.Start();
+        };
         navigation[0].Background = Brush.Parse(Scarlet() ? "#4A2635" : "#34284D");
         Home();
         if (!smoke) Opened += async (_, _) =>
@@ -133,6 +176,203 @@ sealed class MainWindow : Window
         if (index >= 0 && index < navigation.Count)
             navigation[index].Background = Brush.Parse(Scarlet() ? "#4A2635" : "#34284D");
     }
+
+    void PollGamepad()
+    {
+        if (gamepad == null) return;
+        if (!IsActive || !gamepad.TryRead(out uint now))
+        {
+            padHeld = 0;
+            padArmed = false;
+            return;
+        }
+        if (!padArmed)
+        {
+            padHeld = now;
+            padArmed = now == 0;
+            return;
+        }
+
+        uint pressed = LinuxGamepad.NewlyPressed(now, padHeld);
+        long time = Environment.TickCount64;
+        const uint directionMask = LinuxGamepad.UpButton | LinuxGamepad.DownButton |
+            LinuxGamepad.LeftButton | LinuxGamepad.RightButton;
+        uint directions = now & directionMask;
+        if (directions != 0 && (directions & padHeld) == directions && time >= padRepeatAt)
+        {
+            pressed |= directions;
+            padRepeatAt = time + 130;
+        }
+        else if ((pressed & directionMask) != 0)
+            padRepeatAt = time + 400;
+        padHeld = now;
+        if (pressed == 0) return;
+
+        if ((pressed & LinuxGamepad.MenuButton) != 0)
+        {
+            RunControllerAction(StartGame);
+            return;
+        }
+        if ((pressed & (LinuxGamepad.PreviousButton | LinuxGamepad.NextButton)) != 0)
+        {
+            int step = (pressed & LinuxGamepad.NextButton) != 0 ? 1 : -1;
+            padIndex = (padIndex + step + navigation.Count) % navigation.Count;
+            ShowControllerSelection();
+            return;
+        }
+
+        if (padInPage) PadInPage(pressed);
+        else PadInSidebar(pressed);
+    }
+
+    void PadInSidebar(uint pressed)
+    {
+        int count = navigation.Count + 1;
+        if ((pressed & LinuxGamepad.UpButton) != 0) padIndex = (padIndex + count - 1) % count;
+        if ((pressed & LinuxGamepad.DownButton) != 0) padIndex = (padIndex + 1) % count;
+        if ((pressed & (LinuxGamepad.UpButton | LinuxGamepad.DownButton)) != 0)
+            ShowControllerSelection();
+
+        if ((pressed & LinuxGamepad.ConfirmButton) == 0) return;
+        if (padIndex == navigation.Count)
+        {
+            RunControllerAction(StartGame);
+            return;
+        }
+        padInPage = true;
+        navigationPages[padIndex]();
+        List<Control> targets = ControllerTargets();
+        if (targets.Count > 0) FocusController(targets[0]);
+    }
+
+    void ShowControllerSelection()
+    {
+        padInPage = false;
+        if (padIndex == navigation.Count)
+        {
+            SelectNavigation(0);
+            navigationPages[0]();
+            if (homePlay != null) FocusController(homePlay);
+            return;
+        }
+        SelectNavigation(padIndex);
+        navigationPages[padIndex]();
+        navigation[padIndex].Focus();
+    }
+
+    List<Control> ControllerTargets()
+    {
+        var targets = new List<(Control Control, Point Position)>();
+        foreach (Control control in page.GetVisualDescendants().OfType<Control>())
+        {
+            if (!control.IsVisible || !control.IsEffectivelyEnabled || !control.Focusable ||
+                control is not (Button or CheckBox or ComboBox or Slider)) continue;
+            Point? position = control.TranslatePoint(new Point(0, 0), page);
+            if (position.HasValue) targets.Add((control, position.Value));
+        }
+        return targets.OrderBy(x => x.Position.Y).ThenBy(x => x.Position.X).Select(x => x.Control).ToList();
+    }
+
+    void FocusController(Control control)
+    {
+        control.Focus();
+        Point? position = control.TranslatePoint(new Point(0, 0), page);
+        if (!position.HasValue) return;
+        double top = contentScroll.Offset.Y, bottom = top + contentScroll.Viewport.Height;
+        if (position.Value.Y < top)
+            contentScroll.Offset = new Vector(contentScroll.Offset.X, Math.Max(0, position.Value.Y));
+        else if (position.Value.Y + control.Bounds.Height > bottom)
+            contentScroll.Offset = new Vector(contentScroll.Offset.X,
+                Math.Max(0, position.Value.Y + control.Bounds.Height - contentScroll.Viewport.Height));
+    }
+
+    void PadInPage(uint pressed)
+    {
+        Control? focus = page.GetVisualDescendants().OfType<Control>().FirstOrDefault(c => c.IsFocused);
+        if (focus is ComboBox open && open.IsDropDownOpen)
+        {
+            if ((pressed & LinuxGamepad.UpButton) != 0 && open.SelectedIndex > 0) open.SelectedIndex--;
+            if ((pressed & LinuxGamepad.DownButton) != 0 && open.SelectedIndex < open.Items.Count - 1) open.SelectedIndex++;
+            if ((pressed & (LinuxGamepad.ConfirmButton | LinuxGamepad.BackButton)) != 0) open.IsDropDownOpen = false;
+            return;
+        }
+        if ((pressed & LinuxGamepad.BackButton) != 0)
+        {
+            padInPage = false;
+            if (padIndex < navigation.Count) navigation[padIndex].Focus();
+            return;
+        }
+
+        uint directions = pressed & (LinuxGamepad.UpButton | LinuxGamepad.DownButton |
+            LinuxGamepad.LeftButton | LinuxGamepad.RightButton);
+        if (directions != 0)
+        {
+            int dx = (directions & LinuxGamepad.RightButton) != 0 ? 1 :
+                (directions & LinuxGamepad.LeftButton) != 0 ? -1 : 0;
+            int dy = (directions & LinuxGamepad.DownButton) != 0 ? 1 :
+                (directions & LinuxGamepad.UpButton) != 0 ? -1 : 0;
+            if (dx != 0 && focus is Slider slider)
+                slider.Value = Math.Clamp(slider.Value + dx * Math.Max(1, (slider.Maximum - slider.Minimum) / 20),
+                    slider.Minimum, slider.Maximum);
+            else if (dx != 0 && focus is ComboBox combo && combo.Items.Count > 0)
+                combo.SelectedIndex = Math.Clamp(combo.SelectedIndex + dx, 0, combo.Items.Count - 1);
+            else MoveControllerFocus(focus, dx, dy);
+            return;
+        }
+
+        if ((pressed & LinuxGamepad.ConfirmButton) == 0 || focus == null) return;
+        switch (focus)
+        {
+            case Button button when button.IsEffectivelyEnabled:
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case CheckBox check when check.IsEffectivelyEnabled:
+                check.IsChecked = check.IsChecked != true;
+                break;
+            case ComboBox combo when combo.IsEffectivelyEnabled:
+                combo.IsDropDownOpen = true;
+                break;
+        }
+    }
+
+    void MoveControllerFocus(Control? current, int dx, int dy)
+    {
+        List<Control> targets = ControllerTargets();
+        if (targets.Count == 0) return;
+        if (current == null || !targets.Contains(current))
+        {
+            FocusController(targets[0]);
+            return;
+        }
+        Point? from = current.TranslatePoint(new Point(0, 0), page);
+        if (!from.HasValue) return;
+        Rect here = new(from.Value, current.Bounds.Size);
+        double hx = here.Left + here.Width / 2, hy = here.Top + here.Height / 2;
+        var next = targets.Where(c => c != current).Select(c =>
+        {
+            Point? point = c.TranslatePoint(new Point(0, 0), page);
+            if (!point.HasValue) return (Control: c, Valid: false, Score: double.MaxValue);
+            Rect rect = new(point.Value, c.Bounds.Size);
+            double x = rect.Left + rect.Width / 2 - hx, y = rect.Top + rect.Height / 2 - hy;
+            double along = dx != 0 ? x * dx : y * dy, across = dx != 0 ? Math.Abs(y) : Math.Abs(x);
+            bool lane = dx != 0 ? rect.Top < here.Bottom && rect.Bottom > here.Top :
+                rect.Left < here.Right && rect.Right > here.Left;
+            return (Control: c, Valid: along > 4 && (dx == 0 || lane),
+                Score: dx == 0 ? along * 10000 + across : along + across * 2);
+        }).Where(x => x.Valid).OrderBy(x => x.Score).FirstOrDefault();
+        if (next.Control != null) FocusController(next.Control);
+        else if (dx < 0)
+        {
+            padInPage = false;
+            if (padIndex < navigation.Count) navigation[padIndex].Focus();
+        }
+    }
+
+    void RunControllerAction(Action action)
+    {
+        try { action(); }
+        catch (Exception e) { Report(e.Message); }
+    }
     bool Scarlet()
     {
         if (state.Colour == "scarlet") return true;
@@ -162,11 +402,8 @@ sealed class MainWindow : Window
     {
         bool installed = File.Exists(Install.Game(state.Target));
         var play = Action(installed ? "▶  Play" : "Set up now", () =>
-        {
-            if (!File.Exists(Install.Game(state.Target))) { Setup(); Report("Set up the game or select its installation folder first."); return Task.CompletedTask; }
-            if (Install.GameRunning) throw new IOException("PokiNative is already running.");
-            ProcessGame(); return Task.CompletedTask;
-        }, true);
+        { StartGame(); return Task.CompletedTask; }, true);
+        homePlay = play;
         var heroBody = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
         var banner = new Image { Source = Art("banner-" + (Scarlet() ? "scarlet" : "violet") + ".jpg"),
             Stretch = Stretch.UniformToFill };
@@ -200,6 +437,7 @@ sealed class MainWindow : Window
         }
         var hero = new Border { Height = 315, CornerRadius = new CornerRadius(16), ClipToBounds = true, Child = heroBody };
         var content = Stack(hero);
+        content.Children.Add(Text("Controller: use the D-pad or left stick to move, the confirm button to select, and Start to launch.", 12, "#B9AECF"));
         content.Children.Add(new Border
         {
             Background = Brush.Parse("#352735"), BorderBrush = Brush.Parse("#D78C89"), BorderThickness = new Thickness(1),
@@ -264,6 +502,19 @@ sealed class MainWindow : Window
         Report("PokiNative started.");
         process.EnableRaisingEvents = true;
         process.Exited += (_, _) => Dispatcher.UIThread.Post(() => Report($"PokiNative exited (code {process.ExitCode})."));
+    }
+
+    void StartGame()
+    {
+        if (busy) return;
+        if (!File.Exists(Install.Game(state.Target)))
+        {
+            Setup();
+            Report("Set up the game or select its installation folder first.");
+            return;
+        }
+        if (Install.GameRunning) throw new IOException("PokiNative is already running.");
+        ProcessGame();
     }
 
     Control Pick(string key, string title, string value, bool folder, Action<string> save, params string[] extensions)

@@ -64,6 +64,16 @@ static class SelfCheck
                 "legacy KarPur Linux AppImage assets remain recognized");
             Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.6-Windows-x64.zip"),
                 "non-AppImage release assets are ignored");
+            if (OperatingSystem.IsLinux() && requirePayload)
+                Check(File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so")) &&
+                    File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so.0")),
+                    "SDL3 gamepad runtime is next to the Linux launcher");
+            Check(LinuxGamepad.NewlyPressed(LinuxGamepad.ConfirmButton, LinuxGamepad.ConfirmButton) == 0 &&
+                LinuxGamepad.NewlyPressed(LinuxGamepad.ConfirmButton, 0) == LinuxGamepad.ConfirmButton,
+                "controller buttons activate once per press");
+            Check(LinuxGamepad.Directions(0, -16001) == LinuxGamepad.UpButton &&
+                LinuxGamepad.Directions(16000, 0) == 0,
+                "left-stick navigation uses a dead zone");
             Check(Install.Game(root).EndsWith(Path.Combine("build", "game", "karpur")), "native executable path");
             Check(Install.StartInfo(root).WorkingDirectory == root && Install.StartInfo(root).FileName == Install.Game(root), "native launch path and working directory");
             var start = Install.StartInfo(root);

@@ -50,6 +50,8 @@ The Linux release includes `recomplauncher.json` both at the AppImage root and b
 
 The **Controls** page can disable the preset and change stick and camera options. Actual Deck input still needs to be checked on the device; the local Linux tests have no Steam Deck controller.
 
+The launcher itself also supports SDL-mapped controllers. Use the D-pad or left stick to move through the sidebar, press the controller's confirm button to enter a page or activate the focused button, choice, or slider, and press **Start** to launch the game from anywhere. On Home, press confirm to focus **Play**, then press confirm again to launch; **B** returns to the sidebar, and **LB/RB** switch pages. The confirm button is the standard bottom face button (Xbox A, Nintendo Switch B, or PlayStation Cross). Controller input is ignored until the launcher is focused and all buttons have been released, preventing a held button from triggering an action when the window opens. Typing paths and choosing files still require a keyboard and mouse.
+
 ## Updates
 
 **Update** checks public GitHub releases for a Linux AppImage. When one is available, the launcher can download it, verify its SHA-256 file when provided, and install a runnable copy in the game folder. Restart the launcher afterwards. Until a Linux AppImage is published, the page says so.

@@ -436,6 +436,30 @@ static void overlay_init(void) {
         if (!plat_dir_exists(pack_dir))
             rt_fatal("mod pack %s: no folder %s", pack, pack_dir);
         rt_log("mod pack %s: %s (own saves in save-%s)", pack, pack_dir, pack);
+        // patch-sets.txt: one code patch set per line (tools/fps_patches.py) that the pack needs, turned on here,
+        // before the game's code first runs a site (fs_init comes before the game's own start-up)
+        char sets_path[2200];
+        uint64_t sn = 0;
+        char *sets = snprintf(sets_path, sizeof sets_path, "%s/patch-sets.txt", pack_dir) < (int)sizeof sets_path
+                         ? (char *)plat_file_read(sets_path, &sn) : NULL;
+        for (char *p = sets, *end = sets ? sets + sn : NULL; p && p < end;) {
+            char *nl = memchr(p, '\n', (size_t)(end - p));
+            char *e = nl ? nl : end;
+            char name[64];
+            size_t k = (size_t)(e - p);
+            while (k && (p[k - 1] == '\r' || p[k - 1] == ' ')) k--;
+            if (k && k < sizeof name && *p != '#') {
+                memcpy(name, p, k), name[k] = 0;
+                int set = rt_patch_set(name);
+                if (set < 0) rt_log("mod pack %s: code patch set %s is not in this build (re-lift with tools/fps_patches.py)", pack, name);
+                else {
+                    rt_patch_enable(set);
+                    rt_log("mod pack %s: code patch set %s on", pack, name);
+                }
+            }
+            p = e + 1;
+        }
+        free(sets);
         if (!mods) {
             if (snprintf(mods_def, sizeof mods_def, "%s/romfs/manifest.tsv", pack_dir) >= (int)sizeof mods_def ||
                 !plat_file_exists(mods_def))

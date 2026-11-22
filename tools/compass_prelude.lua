@@ -3,8 +3,8 @@
 -- recompiled game, so these run instead: TOTK_LUA_PRELUDE=<this file> (runtime/lua_mod.c) runs it in every new Lua
 -- state just before the game's main script. Decoded from the plugin's AArch64 code (docs/compass-exefs.md).
 --
--- Four are exact (seed generator and decoder, two presence checks). S1C95.. and SDE64.. only toggle a native inline
--- hook at main+0x1141ba0 in the plugin; here they keep their Lua-visible behavior and leave that site unchanged.
+-- Four are exact (seed generator and decoder, two presence checks). S1C95.. and SDE64.. switch the plugin's hook at
+-- main+0x1141ba0, which the runtime's patch set compass does here (runtime/compass.c).
 
 -- One log line per kind of call (Lua print reaches the game log through svc OutputDebugString).
 local said = {}
@@ -59,14 +59,15 @@ local function last(...)
     if k > 0 then return (select(k, ...)) end
 end
 
--- S1C95BFA15FD0AD5D / SDE64977E8D1E8DB4: plugin sets a flag and inline-hooks main+0x1141ba0 (W0 forced to 0, or W0 =
--- c1A1CBE3B.fFCE06E04():f62782BA1()). Not applied here: the site keeps the game's own value.
+-- S1C95BFA15FD0AD5D / SDE64977E8D1E8DB4: the plugin sets a flag and hooks main+0x1141ba0 (W0 forced to 0, or W0 =
+-- c1A1CBE3B.fFCE06E04():f62782BA1()). The runtime does the same at that place (patch set compass, runtime/compass.c);
+-- this line tells it which (Lua print reaches the runtime as a debug string).
 function S1C95BFA15FD0AD5D(...)
-    say("s1c95", "S1C95BFA15FD0AD5D called (plugin would force W0 = 0 at main+0x1141ba0; not applied)")
+    print("KARPUR_CMD compass h7 zero")
     return last(...)
 end
 function SDE64977E8D1E8DB4(...)
-    say("sde64", "SDE64977E8D1E8DB4 called (plugin would hook main+0x1141ba0 to Lua; not applied)")
+    print("KARPUR_CMD compass h7 query")
     return last(...)
 end
 

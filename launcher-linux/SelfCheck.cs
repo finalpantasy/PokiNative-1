@@ -66,6 +66,12 @@ static class SelfCheck
                 "legacy KarPur Linux AppImage assets remain recognized");
             Check(!Updates.IsSupportedAppImageAsset("PokiNative-0.4.6.2-Windows-x64.zip"),
                 "non-AppImage release assets are ignored");
+            Check(Program.Version == typeof(Program).Assembly.GetName().Version?.ToString() &&
+                Program.BuildRevision == Program.Version,
+                "Linux launcher version follows the project assembly version");
+            Check(MainWindow.IssuesUrl == "https://github.com/privacymatters42069-del/PokiNative/issues/new" &&
+                MainWindow.PullRequestsUrl == "https://github.com/privacymatters42069-del/PokiNative/pulls",
+                "Linux launcher GitHub links target PokiNative");
             if (OperatingSystem.IsLinux() && requirePayload)
                 Check(File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so")) &&
                     File.Exists(Path.Combine(AppContext.BaseDirectory, "libSDL3.so.0")),

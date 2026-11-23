@@ -1,5 +1,12 @@
 # Progress
 
+## Correcting Linux launcher version and repository links (2026-11-23)
+
+- In the clean `PokiNative-git` checkout on `testing`, made the Linux launcher derive `Version` and `BuildRevision` from its generated assembly version instead of stale constants. The release-preparation workflow sets the project version, and the Linux AppImage build already runs the launcher self-check, so future Windows/Linux release builds will carry and validate the matching version without a workflow text-rewrite.
+- Updated the Linux Home-page issue and contribution links to the current PokiNative repository.
+- Added self-checks for the package version and both repository links. A build with `-p:Version=0.4.6.3` succeeded and confirmed assembly version `0.4.6.3`; both new self-checks passed. The full self-check later stopped at its existing `GameRunning` guard while saving synthetic settings.
+- Next: push these changes and run the existing release workflow to generate the corrected Linux AppImage alongside the Windows launcher. The AppImage has not yet been rebuilt or published.
+
 ## Investigating Windows performance requests for issue #37 (2026-11-23)
 
 - Continued in the correct Git checkout, `PokiNative-git` on `testing` at `efcbae7`; the separate Downloads copy is not the active repository.

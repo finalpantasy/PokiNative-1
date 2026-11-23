@@ -16,6 +16,15 @@
 - The newer optional AO and indirect-light settings default to `0`; they should not add work unless enabled in the user's configuration. Lower render scale can help only if the GPU is the bottleneck.
 - Next: collect a controlled Steam Deck A/B in the same save/area and settings, with the game's Full performance overlay (CPU/GPU frame times and render-thread waits) and SteamOS/Mesa versions. Avoid changing runtime defaults until the bottleneck is measured.
 
+## Escalating flicker and missing-texture investigation (2026-11-22)
+
+- Existing tests have not found a settings fix: issue #16 reports no improvement from LOD, fresh shader/pipeline caches, GPL, submit sync, or higher people/Pokemon detail; the higher detail settings cost about 4 FPS on the Deck. Issue #26 reports no improvement from memory import or compute-copy tests. Do not repeat the combined `TOTK_SHADOW=0` / `TOTK_MEMORY=import` test, which caused severe slowdown and did not isolate the memory mode.
+- Separate the symptoms before changing code. Flickering geometry can be a timing/script-step or resource-identity problem; missing building/ground textures can be an upload, decode, or texture-residency problem.
+- Useful existing diagnostics are in `runtime/vk_texture.c` (unsupported layouts uploaded as zeros, ASTC decode failures, texture re-uploads and GPU-owned texture reclaim) and `runtime/vk_memory.c` (untracked write-watch snapshots). No #26 reproduction launch log has been captured.
+- Next: capture a baseline reproduction with normal settings and its text log. If current logs do not identify the path, add a diagnostic-only trace correlating texture address, dimensions, format, write generation, cache/reclaim decision and upload result with frame number. Print metadata and counts only, never texture bytes or keys. Fix the specific failing path and add a focused regression test; verify on the Deck and another Vulkan GPU.
+- A Steam Deck test with only `TOTK_SCRIPT_STEP=0` did not restore the tree model: close up, flicker stops but leaves remain extremely low-poly and the trunk is absent; at a distance, flicker returns. Building/ground textures were unchanged. This weakens the global script-step hypothesis and points toward distance-dependent model/visibility behavior for trees; the unchanged textures suggest their failure follows a separate path. Neither cause is identified.
+- Next: clear `TOTK_SCRIPT_STEP=0` after recording the test. Diagnose tree model/visibility decisions separately from building/ground texture upload, decode and residency; avoid another broad settings sweep.
+
 ## Separating test launcher builds from `main` (2026-11-22)
 
 - Updated the launcher workflow to build Windows and Linux artifacts for pushes to `main` or `testing`, pull requests targeting `testing`, and pushes of any tag. Build artifacts are named with the Actions run number and commit SHA unless the tag has a release-specific name.

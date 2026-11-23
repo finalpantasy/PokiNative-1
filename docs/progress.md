@@ -5,7 +5,9 @@
 - The Linux source unpacker now removes top-level `runtime/*.c` files absent from the newly installed payload after extraction succeeds. This prevents a removed source such as the old `runtime/compass.c` from being compiled on upgrades, without deleting build outputs or game data.
 - The Linux launcher derives `Version` and `BuildRevision` from its generated assembly version instead of stale constants, and its Home-page issue/contribution links now point to the current PokiNative repository. The release-preparation workflow sets the project version; the existing AppImage build runs the self-check.
 - Added self-checks for obsolete runtime source removal, the package-derived version, and both repository links. A build with `-p:Version=0.4.6.4` produced assembly version `0.4.6.4`; all new checks passed. The full self-check later stopped at its existing `GameRunning` guard while saving synthetic settings.
-- Commit `1f072e8` is pushed to `testing`. `python tools/check_launcher.py --payload` passed every check. Both launcher projects are now prepared as version `0.4.6.4`; the existing tag workflow builds Windows and Linux and creates a draft release. Next: push the `0.4.6.4` tag and review the draft. The AppImage is not built or published yet; do not publish before the manual launcher checks are complete.
+- Commit `1f072e8` is pushed to `testing`; `python tools/check_launcher.py --payload` passed every check. Both launcher projects were prepared as version `0.4.6.4`, and the `0.4.6.4` tag was pushed.
+- [Actions run 45268461346](https://github.com/privacymatters42069-del/PokiNative/actions/runs/45268461346) succeeded for validation, Windows, Linux, and draft release creation. The Linux AppImage self-check passed all 40 checks, including removal of obsolete runtime C files; the draft contains `PokiNative-0.4.6.4-linux-x86_64.AppImage`.
+- The release remains a draft, not published. Next: complete the manual launcher checks, including a clean Steam Deck build, then publish the draft if those checks pass.
 
 ## Investigating Windows performance requests for issue #37 (2026-11-23)
 

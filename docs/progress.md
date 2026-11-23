@@ -1,5 +1,10 @@
 # Progress
 
+## Diagnosing a launcher build failure (2026-11-23)
+
+- The supplied log fails while compiling `runtime/compass.c`: `lua_mod_last_state` and `lua_mod_eval_int` are undeclared. The available `PokiNative-git` checkout has no `runtime/compass.c`, and its `runtime/lua_mod.c` does not define either helper; the log names a different build root (`PokeNative-Play\KarPur`).
+- This is a source-snapshot mismatch, not a launcher compiler/toolchain failure. Do not add declarations alone: the matching implementations and their intended signatures must be restored/inspected first. Next: identify the exact source tree used by the failed build, or rebuild from the available checkout.
+
 ## Fixing 0.4.6.2 launcher validation (2026-11-22)
 
 - GitHub Actions run `45084779844` stopped in `validate` at `tools/check_launcher.py`; the workflow YAML and Python setup were not the cause. The checker found that `TOTK_SHADOW_SOFT` had no settings-table default and that `LIGHTING_HALF` was missing from the runtime's known-key list.

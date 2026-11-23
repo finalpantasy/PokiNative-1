@@ -178,11 +178,19 @@ static class SelfCheck
             Check(ini.Get("operation_mode") == "handheld" && ini.Get("vk_present") == "fifo" &&
                 ini.Get("perf_overlay") == "fps" && ini.Get("gpu_name") == "Synthetic GPU" &&
                 ini.Get("submit_defer") == "0" && ini.Get("hot_cool") == "0" &&
-                ini.Get("output_res") == "800x450" && ini.Get("svhost_test") == "1" && ini.Get("volume") == "75" &&
+                ini.Get("readback_guard") == "1" && ini.Get("output_res") == "800x450" &&
+                ini.Get("svhost_test") == "1" && ini.Get("volume") == "75" &&
                 File.ReadAllText(iniPath).Contains("# keep this"), "settings preserve existing values and comments");
             Install.SaveSettings(install, "60", "1280x800", true, "fsr", "fifo", "fps",
                 gpu: "Synthetic GPU", safeSubmit: true, keepHotMemory: false);
-            Check(new Ini(iniPath).Get("hot_cool") == "300", "hot memory compatibility switch restores the default");
+            var optOut = new Ini(iniPath);
+            optOut.Set("performance", "readback_guard", "0");
+            optOut.Save();
+            Install.SaveSettings(install, "60", "1280x800", true, "fsr", "fifo", "fps",
+                gpu: "Synthetic GPU", safeSubmit: true, keepHotMemory: false);
+            var saved = new Ini(iniPath);
+            Check(saved.Get("hot_cool") == "300" && saved.Get("readback_guard") == "0",
+                "hot memory reset and readback guard opt-out are preserved");
             string profile = Install.Profile(install);
             Directory.CreateDirectory(profile);
             File.WriteAllBytes(Path.Combine(profile, "account.uid"), Enumerable.Range(0, 16).Select(i => (byte)i).ToArray());

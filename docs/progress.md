@@ -1,5 +1,11 @@
 # Progress
 
+## Enabling the readback guard by default (2026-11-23)
+
+- The runtime now defaults `TOTK_READBACK_GUARD` to on, and both launchers save `[performance] readback_guard = 1` when it is unset. An explicit `readback_guard = 0` remains an opt-out; the environment variable still takes precedence.
+- Registered the setting's `performance` section for runtime saves. Added launcher checks for the runtime default and both platform writers, plus a Linux self-check for the default and preserved opt-out.
+- The prior A/B recorded worse 1% lows with the guard enabled. This requested default has not yet been verified in gameplay; compare 1% lows and stutter with `readback_guard = 0` before publishing a release.
+
 ## Fixing Linux source updates and launcher metadata (2026-11-23)
 
 - The Linux source unpacker now removes top-level `runtime/*.c` files absent from the newly installed payload after extraction succeeds. This prevents a removed source such as the old `runtime/compass.c` from being compiled on upgrades, without deleting build outputs or game data.
@@ -46,7 +52,7 @@
 - Useful existing diagnostics are in `runtime/vk_texture.c` (unsupported layouts uploaded as zeros, ASTC decode failures, texture re-uploads and GPU-owned texture reclaim) and `runtime/vk_memory.c` (untracked write-watch snapshots). No #26 reproduction launch log has been captured.
 - Next: capture a baseline reproduction with normal settings and its text log. If current logs do not identify the path, add a diagnostic-only trace correlating texture address, dimensions, format, write generation, cache/reclaim decision and upload result with frame number. Print metadata and counts only, never texture bytes or keys. Fix the specific failing path and add a focused regression test; verify on the Deck and another Vulkan GPU.
 - A Steam Deck test with only `TOTK_SCRIPT_STEP=0` did not restore the tree model: close up, flicker stops but leaves remain extremely low-poly and the trunk is absent; at a distance, flicker returns. Building/ground textures were unchanged. This weakens the global script-step hypothesis and points toward distance-dependent model/visibility behavior for trees; the unchanged textures suggest their failure follows a separate path. Neither cause is identified.
-- Next: with `TOTK_SCRIPT_STEP=0` removed and other settings unchanged, run a short Steam Deck reproduction with only `TOTK_READBACK_WATCH=1` added. Check its `readback:` lines alongside existing texture upload/decode/reclaim messages. If game code reads GPU-written bytes before the GPU finishes, test `TOTK_READBACK_GUARD=1` separately as a targeted synchronization A/B; otherwise do not add a wait. Diagnose building/ground textures on their own path and avoid another broad settings sweep.
+- Next: with `TOTK_SCRIPT_STEP=0` removed and other settings unchanged, compare the default `readback_guard = 1` with only `readback_guard = 0` in `karpur.ini` on the same Steam Deck route. Check the `readback:` lines alongside texture upload/decode/reclaim messages and compare FPS and stutter. Diagnose building/ground textures on their own path and avoid another broad settings sweep.
 
 ## Separating test launcher builds from `main` (2026-11-22)
 

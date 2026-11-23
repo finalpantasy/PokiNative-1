@@ -1,4 +1,4 @@
-name: Build PokiNative 0.4.6.2
+name: Build PokiNative 0.4.6.3
 
 on:
   push:
@@ -95,14 +95,14 @@ jobs:
       - name: Upload Linux release files
         uses: actions/upload-artifact@v4
         with:
-          name: PokiNative-0.4.6.2-Linux-x86_64
+          name: PokiNative-0.4.6.3-Linux-x86_64
           path: |
-            dist/linux/PokiNative-0.4.6.2-linux-x86_64.AppImage
-            dist/linux/PokiNative-0.4.6.2-linux-x86_64.AppImage.sha256
+            dist/linux/PokiNative-0.4.6.3-linux-x86_64.AppImage
+            dist/linux/PokiNative-0.4.6.3-linux-x86_64.AppImage.sha256
           if-no-files-found: error
 
   create-draft-release:
-    if: github.event_name == 'push' && github.ref == 'refs/tags/0.4.6.2'
+    if: github.event_name == 'push' && github.ref == 'refs/tags/0.4.6.3'
     needs:
       - build-windows
       - build-linux
@@ -114,12 +114,12 @@ jobs:
       - name: Download Windows files
         uses: actions/download-artifact@v4
         with:
-          name: PokiNative-0.4.6.2-Windows-x64
+          name: PokiNative-0.4.6.3-Windows-x64
           path: release-assets
       - name: Download Linux files
         uses: actions/download-artifact@v4
         with:
-          name: PokiNative-0.4.6.2-Linux-x86_64
+          name: PokiNative-0.4.6.3-Linux-x86_64
           path: release-assets
       - name: Create or refresh the draft release
         env:
@@ -138,5 +138,5 @@ jobs:
             gh release upload "$tag" release-assets/* --clobber
           else
             gh release create "$tag" release-assets/* --draft --verify-tag \
-              --title "PokiNative $tag" --notes-file docs/releases/0.4.6.2.md
+              --title "PokiNative $tag" --notes-file docs/releases/0.4.6.3.md
           fi

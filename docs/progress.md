@@ -9,6 +9,13 @@
 - The fix commit also includes generated .NET intermediate files from the prior worktree; leave history intact and clean them up in a follow-up if desired.
 - Next: review the run artifacts, then push tag `0.4.6.2` to the approved `testing` commit. The tag push will run the workflow and create or refresh the draft release.
 
+## Investigating the 0.4.2-to-0.4.4 performance report (2026-11-22)
+
+- Open issue #25 reports 25–30 FPS on an RX 6600 / Core i3-10100F in the Cabo Poco-to-lighthouse route on 0.4.4 and 0.4.6, versus 45–50 FPS on 0.4.2 with the same settings. This is a matching regression report, but not a Steam Deck measurement.
+- Comparing tags `0.4.2` and `0.4.4` shows no changes to `runtime/` or the core game build-pipeline sources. The tag diff is primarily documentation and launcher packaging, so the cause is not identified by the source diff.
+- The newer optional AO and indirect-light settings default to `0`; they should not add work unless enabled in the user's configuration. Lower render scale can help only if the GPU is the bottleneck.
+- Next: collect a controlled Steam Deck A/B in the same save/area and settings, with the game's Full performance overlay (CPU/GPU frame times and render-thread waits) and SteamOS/Mesa versions. Avoid changing runtime defaults until the bottleneck is measured.
+
 ## Separating test launcher builds from `main` (2026-11-22)
 
 - Updated the launcher workflow to build Windows and Linux artifacts for pushes to `main` or `testing`, pull requests targeting `testing`, and pushes of any tag. Build artifacts are named with the Actions run number and commit SHA unless the tag has a release-specific name.

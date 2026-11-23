@@ -36,7 +36,7 @@ static const char *const known[] = {
     "BIND_LSTICK_RIGHT", "BIND_LSTICK_UP", "BIND_MINUS",
     "BIND_PLUS", "BIND_R", "BIND_RCLICK", "BIND_RIGHT", "BIND_RSTICK_DOWN", "BIND_RSTICK_LEFT", "BIND_RSTICK_RIGHT", "BIND_RSTICK_UP",
     "BIND_SKIP", "BIND_STATS", "BIND_UP", "BIND_X", "BIND_Y",
-    "ALIAS_LOG", "ANISO", "AUDIO_CENSUS", "AUDIO_QUEUE_MAX_MS", "BARRIER_TRACK", "BIND_ZL", "BIND_ZR", "BLOCK_VIEWS_3D", "CLOTH_REALTIME", "COLOR_BRIGHTNESS", "COLOR_CONTRAST", "COLOR_GAMMA", "COLOR_PRESET", "COLOR_SATURATION", "COMPASS_HOOKS", "CORE_DIAG", "CORE_LAZY", "COVERAGE", "CRIT", "CRIT_OUT", "DATA_FIND", "DATA_PATCH_LIST", "DATA_WATCH", "DATA_WATCH_LIST", "DEPTH_ONLY", "DESC_TEMPLATE", "DEVICE_PROFILE", "DUMP", "DUMP_BUF", "DUMP_DIR", "DUMP_LOG", "DYNRES_FULL",
+    "ALIAS_LOG", "ANISO", "AUDIO_CENSUS", "AUDIO_QUEUE_MAX_MS", "BARRIER_TRACK", "BIND_ZL", "BIND_ZR", "BLOCK_VIEWS_3D", "CLOTH_REALTIME", "COLOR_BRIGHTNESS", "COLOR_CONTRAST", "COLOR_GAMMA", "COLOR_PRESET", "COLOR_SATURATION", "CORE_DIAG", "CORE_LAZY", "COVERAGE", "CRIT", "CRIT_OUT", "DATA_FIND", "DATA_PATCH_LIST", "DATA_WATCH", "DATA_WATCH_LIST", "DEPTH_ONLY", "DESC_TEMPLATE", "DEVICE_PROFILE", "DUMP", "DUMP_BUF", "DUMP_DIR", "DUMP_LOG", "DYNRES_FULL",
     "EXEFS", "FEEDBACK", "FIX_C0", "FIX_ZERO", "FLIGHT", "FLIGHT_AT", "FLIGHT_DIR", "FLIGHT_FRAMES", "FLIGHT_SPIKE_MS",
     "FLIGHT_THUMBS", "FOV", "FOV_PATCH", "FPS60", "FPS_DT_NS", "FPS_DT_SNAP", "FPS_LIMIT", "FREEZE_IDLE", "FREE_CORES", "FULLSCREEN", "GAME_BARRIER", "GPL", "HOT_BIND_MAX", "HOT_COOL", "HOT_EXACT", "HOT_KB", "HOT_LATE_SUBS", "HOT_SAFE", "HOT_REFRESH", "GPL_DRAW_BUILD", "GPU",
     "GPU_INDEX", "GPU_NAME", "HIGHFPS_FIX", "HOSTCALLS", "IND_BASE", "INDOOR_FIX", "INPUT", "INTERVAL_ONE", "INPUT_RECORD", "INPUT_SCRIPT", "LANG", "LIB_PREBUILD", "LUA_MOD", "LUA_MOD_FILE", "LUA_PRELUDE",
@@ -63,7 +63,7 @@ static const struct { const char *key, *section; } sections[] = {
     {"SHARPNESS", "display"}, {"ASPECT", "display"}, {"LOD", "display"}, {"LOD_BIAS", "display"}, {"ANISO", "display"}, {"FOV", "display"}, {"COLOR_PRESET", "display"}, {"SHADOW_RES", "display"}, {"LIGHTING_HALF", "display"},
     {"COLOR_BRIGHTNESS", "display"}, {"COLOR_CONTRAST", "display"}, {"COLOR_SATURATION", "display"},
     {"COLOR_GAMMA", "display"},
-    {"DEVICE_PROFILE", "display"}, {"ASSUME_FOCUS", "display"}, {"POPULATION", "display"}, {"PEOPLE_DETAIL", "display"}, {"POKEMON_DETAIL", "display"}, {"PEOPLE_SHOWN", "display"}, {"NO_EXCLUSIVES", "display"}, {"NO_TRADE_EVO", "display"}, {"LUA_PRELUDE", "compatibility"}, {"MOD_PACK", "compatibility"}, {"COMPASS_HOOKS", "compatibility"},
+    {"DEVICE_PROFILE", "display"}, {"ASSUME_FOCUS", "display"}, {"POPULATION", "display"}, {"PEOPLE_DETAIL", "display"}, {"POKEMON_DETAIL", "display"}, {"PEOPLE_SHOWN", "display"}, {"NO_EXCLUSIVES", "display"}, {"NO_TRADE_EVO", "display"}, {"LUA_PRELUDE", "compatibility"}, {"MOD_PACK", "compatibility"},
     {"MENU_LANG", "language"}, {"LANG", "language"}, {"OPERATION_MODE", "language"},
     {"VOLUME", "audio"},
     {"MOTION", "input"}, {"RUMBLE_STRENGTH", "input"}, {"RUMBLE_CURVE", "input"}, {"RUMBLE_TRIGGERS", "input"},
@@ -125,7 +125,6 @@ static const CfgMeta metas[] = {
     {"NO_EXCLUSIVES", "0", "0|1", RESTART},   // data_patch.c: both editions' exclusive wild Pokemon spawn
     {"NO_TRADE_EVO", "0", "0|1", RESTART},   // data_patch.c: trade-only evolutions evolve on a level instead
     {"LUA_PRELUDE", "", NULL, RESTART},   // lua_mod.c: a Lua file run before each game main script (RomFS mods)
-    {"COMPASS_HOOKS", "0", "0|1", RESTART},   // patch set compass (runtime/compass.c); a mod pack's patch-sets.txt turns it on
     {"MOD_PACK", "", NULL, RESTART},   // romfs.c: mods/<name>/ next to romfs-index.bin (romfs + prelude.lua), own saves; karpur.exe --mod NAME
     // Sound, Controls, Menu
     {"VOLUME", "100", "0..100", LIVE},

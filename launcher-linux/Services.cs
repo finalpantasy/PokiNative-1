@@ -188,6 +188,10 @@ static class Install
     public static void Unpack(string archive, string root, CancellationToken cancel, Action<int, int>? report = null)
     {
         using var zip = ZipFile.OpenRead(archive);
+        var packagedFiles = zip.Entries
+            .Where(entry => !entry.FullName.EndsWith('/'))
+            .Select(entry => entry.FullName)
+            .ToHashSet(StringComparer.Ordinal);
         // Validate every entry before touching the installation.
         foreach (var entry in zip.Entries)
         {
@@ -216,6 +220,17 @@ static class Install
             finally { if (File.Exists(tmp)) File.Delete(tmp); }
             prepared++;
             if (prepared % 500 == 0 || prepared == total) report?.Invoke(prepared, total);
+        }
+        cancel.ThrowIfCancellationRequested();
+        string runtime = Path.Combine(root, "runtime");
+        if (Directory.Exists(runtime))
+        {
+            string fullRoot = Path.GetFullPath(root);
+            foreach (string source in Directory.EnumerateFiles(runtime, "*.c", SearchOption.TopDirectoryOnly))
+            {
+                string relative = Path.GetRelativePath(fullRoot, source).Replace(Path.DirectorySeparatorChar, '/');
+                if (!packagedFiles.Contains(relative)) File.Delete(SafePath(root, relative));
+            }
         }
     }
 

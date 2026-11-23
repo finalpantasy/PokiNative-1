@@ -1,11 +1,11 @@
 # Progress
 
-## Correcting Linux launcher version and repository links (2026-11-23)
+## Fixing Linux source updates and launcher metadata (2026-11-23)
 
-- In the clean `PokiNative-git` checkout on `testing`, made the Linux launcher derive `Version` and `BuildRevision` from its generated assembly version instead of stale constants. The release-preparation workflow sets the project version, and the Linux AppImage build already runs the launcher self-check, so future Windows/Linux release builds will carry and validate the matching version without a workflow text-rewrite.
-- Updated the Linux Home-page issue and contribution links to the current PokiNative repository.
-- Added self-checks for the package version and both repository links. A build with `-p:Version=0.4.6.3` succeeded and confirmed assembly version `0.4.6.3`; both new self-checks passed. The full self-check later stopped at its existing `GameRunning` guard while saving synthetic settings.
-- Next: push these changes and run the existing release workflow to generate the corrected Linux AppImage alongside the Windows launcher. The AppImage has not yet been rebuilt or published.
+- The Linux source unpacker now removes top-level `runtime/*.c` files absent from the newly installed payload after extraction succeeds. This prevents a removed source such as the old `runtime/compass.c` from being compiled on upgrades, without deleting build outputs or game data.
+- The Linux launcher derives `Version` and `BuildRevision` from its generated assembly version instead of stale constants, and its Home-page issue/contribution links now point to the current PokiNative repository. The release-preparation workflow sets the project version; the existing AppImage build runs the self-check.
+- Added self-checks for obsolete runtime source removal, the package-derived version, and both repository links. A build with `-p:Version=0.4.6.4` produced assembly version `0.4.6.4`; all new checks passed. The full self-check later stopped at its existing `GameRunning` guard while saving synthetic settings.
+- The existing tag release workflow builds both Windows and Linux. The `0.4.6.4` tag does not exist yet, and GitHub CLI is not authenticated here. Next: commit and push the source changes, prepare `0.4.6.4`, then push its tag to build the corrected release. No AppImage has been built or published yet.
 
 ## Investigating Windows performance requests for issue #37 (2026-11-23)
 

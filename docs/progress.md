@@ -5,7 +5,9 @@
 - GitHub Actions run `45084779844` stopped in `validate` at `tools/check_launcher.py`; the workflow YAML and Python setup were not the cause. The checker found that `TOTK_SHADOW_SOFT` had no settings-table default and that `LIGHTING_HALF` was missing from the runtime's known-key list.
 - Added the `SHADOW_SOFT` setting with a default of `0` (preserving the existing no-filter behavior), and registered both keys with the runtime. The check remains enabled.
 - Local `tools/check_launcher.py` now passes the `settings` and `keys` checks. Its remaining `tools` check cannot pass here because this Mac has Python 3.9.6, which lacks `tomllib`, and the test dependencies are not installed; Actions uses Python 3.14.
-- Next: commit and push the changes to `testing` and confirm the Actions run passes before tagging a release.
+- The fix is on `testing` at merge commit `72a7438`. Manual run `45085978944` passed validation and both platform builds and uploaded Windows and Linux artifacts. Draft creation was skipped by design because it requires a push of tag `0.4.6.2`; that remote tag does not exist yet. The maintainer chose to keep draft creation tag-only.
+- The fix commit also includes generated .NET intermediate files from the prior worktree; leave history intact and clean them up in a follow-up if desired.
+- Next: review the run artifacts, then push tag `0.4.6.2` to the approved `testing` commit. The tag push will run the workflow and create or refresh the draft release.
 
 ## Separating test launcher builds from `main` (2026-11-22)
 

@@ -5,7 +5,7 @@
 - The Linux source unpacker now removes top-level `runtime/*.c` files absent from the newly installed payload after extraction succeeds. This prevents a removed source such as the old `runtime/compass.c` from being compiled on upgrades, without deleting build outputs or game data.
 - The Linux launcher derives `Version` and `BuildRevision` from its generated assembly version instead of stale constants, and its Home-page issue/contribution links now point to the current PokiNative repository. The release-preparation workflow sets the project version; the existing AppImage build runs the self-check.
 - Added self-checks for obsolete runtime source removal, the package-derived version, and both repository links. A build with `-p:Version=0.4.6.4` produced assembly version `0.4.6.4`; all new checks passed. The full self-check later stopped at its existing `GameRunning` guard while saving synthetic settings.
-- The existing tag release workflow builds both Windows and Linux. The `0.4.6.4` tag does not exist yet, and GitHub CLI is not authenticated here. Next: commit and push the source changes, prepare `0.4.6.4`, then push its tag to build the corrected release. No AppImage has been built or published yet.
+- Commit `1f072e8` is pushed to `testing`. `python tools/check_launcher.py --payload` passed every check. Both launcher projects are now prepared as version `0.4.6.4`; the existing tag workflow builds Windows and Linux and creates a draft release. Next: push the `0.4.6.4` tag and review the draft. The AppImage is not built or published yet; do not publish before the manual launcher checks are complete.
 
 ## Investigating Windows performance requests for issue #37 (2026-11-23)
 

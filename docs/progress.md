@@ -1,5 +1,13 @@
 # Progress
 
+## Investigating Windows performance requests for issue #37 (2026-11-23)
+
+- Continued in the correct Git checkout, `PokiNative-git` on `testing` at `efcbae7`; the separate Downloads copy is not the active repository.
+- The latest reporter log records `SetPerformanceConfiguration` calls for modes/configurations `0/0x20004`, `1/0x10001`, and `0/0x92220008`. `runtime/ov_system.c` validates the mode and logs the request but intentionally leaves scheduling to the host.
+- These values describe Switch CPU, GPU, and memory clock profiles, not a CPU-thread priority request. The logged profiles hold CPU at 1020 MHz while selecting different GPU and memory clocks, so mapping them to Windows thread priority would not address the requested GPU behavior. Windows has no safe general API for reproducing those Switch clock settings per game; no speculative runtime change was made.
+- The latest log's first 60-second window is 53.9 FPS mean / 15.9 FPS 1% low; the next is 59.2 / 47.6, and the final 27.4 seconds are 59.7 / 50.6. Its 1.59-second worst frame has almost no measured render, wait, or pacing time; other long frames include GPU/fence waits. This does not identify a safe code-level fix or prove that the reported background-game effect is caused by runtime scheduling.
+- Next: stop asking the reporter to toggle more settings. Continue with existing telemetry and source evidence to distinguish Windows/NVIDIA power behavior from runtime GPU waits; make a runtime change only if a specific, safe Windows equivalent is identified and it can be validated.
+
 ## Fixing 0.4.6.2 launcher validation (2026-11-22)
 
 - GitHub Actions run `45084779844` stopped in `validate` at `tools/check_launcher.py`; the workflow YAML and Python setup were not the cause. The checker found that `TOTK_SHADOW_SOFT` had no settings-table default and that `LIGHTING_HALF` was missing from the runtime's known-key list.

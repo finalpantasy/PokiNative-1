@@ -1,5 +1,21 @@
 # Progress
 
+## Investigating RecompLauncher verified-copy and handheld badges (2026-11-24)
+
+- The RecompLauncher guide defines **Verified Copies** through `inputs[].dumps`, with a verified copy's name and CRC32 (optionally its size). Its guidance is to use known-good dump metadata from Redump or No-Intro. The current [recomplauncher.json](../recomplauncher.json) has no `dumps` entries.
+- No authoritative public CRC32 for the accepted Pokémon Scarlet/Violet XCI files was verified during this check. The official No-Intro site could not be reached from this environment, and public code searches did not locate an authoritative Scarlet/Violet XCI entry. No checksum was invented or added. The format requires reading the whole selected file, so a large XCI's setup-time cost should also be considered.
+- The **Handheld Rating** shown in the screenshot is based on handheld players' reports, not a manifest setting. The project roadmap records experimental Steam Deck/Linux support, but that is not sufficient evidence to assign a player rating; a real-device report is still needed.
+- Next: ask whether the maintainer can provide an authoritative public dump reference (or run a local hash report on their own copy for review) and whether a Steam Deck/handheld PC is available for a gameplay report. Do not claim a verified copy or handheld rating until the corresponding evidence exists.
+
+## Verifying the RecompLauncher manifest in Windows release ZIPs (2026-11-24)
+
+- The RecompLauncher request asked for `recomplauncher.json` at the top level of the next Windows release ZIP, beside `KarPur-Launcher.exe`.
+- No packaging change was needed: [tools/make_launcher.py](../tools/make_launcher.py) already adds the manifest as `recomplauncher.json` to `PokiNative-<version>-Windows-x64.zip`, and [.github/workflows/build-launchers.yml](../.github/workflows/build-launchers.yml) uploads that ZIP for release creation.
+- Verified the public 0.4.6.5 release is latest and lists both `PokiNative-0.4.6.5-Windows-x64.zip` and a standalone `recomplauncher.json`. Downloaded the live ZIP to a temporary path and confirmed its root contains `KarPur-Launcher.exe` and `recomplauncher.json`; the temporary ZIP was removed afterward. The release manifest's SHA-256 matches the repository file, which is also present on the default branch.
+- The public RecompLauncher catalog entry reports version/tag 0.4.6.5 and a release timestamp after the assets were uploaded. However, the reported support badge still says the manifest is not in a release. This is inconsistent with the published assets and the documented package layout, so the badge may be stale or its release scanner may not recognize the package; the cause is not confirmed.
+- No source or packaging change, launcher build, or new release was necessary. The Linux packaging script also puts the manifest at the AppDir root, but the live Linux AppImage payload was not independently inspected in this check.
+- Next: refresh/restart RecompLauncher and check again. If the badge still says the manifest is missing, ask RecompLauncher support to refresh or investigate its release detection, providing the 0.4.6.5 release and Windows ZIP links rather than publishing another release.
+
 ## Updating README release references during preparation (2026-11-24)
 
 - The release-preparation workflow generated `docs/releases/<version>.md` and changed both launcher project versions, but did not update the README. As a result, after preparing 0.4.6.5, the README still linked to 0.4.6.4 and named the 0.4.6.4 Linux AppImage.

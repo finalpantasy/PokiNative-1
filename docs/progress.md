@@ -1,5 +1,16 @@
 # Progress
 
+## Changing maintainer-facing language and documentation rules (2026-11-24)
+
+- The maintainer explicitly changed the communication and documentation rules: all maintainer-facing guides and explanations must now be written in English, replacing the previous German-guide requirement.
+- Updated [CLAUDE.md](CLAUDE.md) in the project instructions:
+  - Changed maintainer explanations from German to English.
+  - Changed the guide requirement so setup, launcher, and release guides must all be written in English.
+  - Added a documentation rule requiring thorough change records with changed files, behavior, verification, limitations, follow-ups, and exact next steps.
+- This repository rule is in effect for future code changes and documentation. Existing German guides and historical German archive content are not rewritten as part of this change.
+- No build or game test is needed for this instruction-only update.
+- Verification: reviewed [CLAUDE.md](CLAUDE.md) and recorded the override here. Next: preserve English for all new or revised maintainer-facing documentation and document future work in this level of detail.
+
 ## Enabling the readback guard by default (2026-11-23)
 
 - The runtime now defaults `TOTK_READBACK_GUARD` to on, and both launchers save `[performance] readback_guard = 1` when it is unset. An explicit `readback_guard = 0` remains an opt-out; the environment variable still takes precedence.

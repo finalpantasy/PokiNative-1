@@ -4,9 +4,10 @@ Static recompilation of *Pokémon Scarlet & Violet* (Nintendo Switch, ARM64) int
 
 ## How this project works
 
-- The maintainer owns the game and a console, runs everything on a Windows PC (Ryzen 7 9800X3D, RTX 5080, 96 GB RAM) and is a beginner at programming. Explain steps to them in German, one command per code block, with the expected output, and assume nothing is installed that `docs/setup-windows.md` does not set up.
+- The maintainer owns the game and a console, runs everything on a Windows PC (Ryzen 7 9800X3D, RTX 5080, 96 GB RAM) and is a beginner at programming. Explain steps to them in English, one command per code block, with the expected output, and assume nothing is installed that `docs/setup-windows.md` does not set up.
 - Agents never see game files. Tools we write run on the maintainer's PC and print **reports** (versions, hashes, sizes, counts, addresses, symbol names, error messages) that the maintainer pastes back. Design every tool so that its output is useful as such a report and contains no game bytes or key values.
 - Agent sessions start without memory. Record decisions, findings and the next steps in `docs/progress.md` before ending a piece of work.
+- Document every change thoroughly: list the files changed, the behavior or rule changed, verification performed, any remaining limitation or follow-up, and the exact next step. Do not use vague summaries such as "fixed" or "updated" without evidence.
 
 ## Game content boundary
 
@@ -35,4 +36,4 @@ This repository is public. Nothing from the game may enter it.
 
 ## Writing
 
-Code, comments, commit messages and `CLAUDE.md` are in English. `README.md`, `docs/roadmap.md` and `docs/progress.md` are in English (the German log up to 2026-11-08 stays in `docs/progress-archive-de.md`). The guides the maintainer reads (`docs/setup-windows.md`, `docs/launcher.md`, `docs/launcher-checks.md`) are in German. Commit messages are plain sentences without type prefixes.
+Code, comments, commit messages and `CLAUDE.md` are in English. `README.md`, `docs/roadmap.md` and `docs/progress.md` are in English (the German log up to 2026-11-08 stays in `docs/progress-archive-de.md`). All guides the maintainer reads, including `docs/setup-windows.md`, `docs/launcher.md`, and `docs/launcher-checks.md`, are in English. Commit messages are plain sentences without type prefixes.

@@ -126,6 +126,42 @@ jobs:
 
           echo "Created $notes_file"
 
+      - name: Update README release references
+        env:
+          PREVIOUS_TAG: ${{ steps.release_context.outputs.previous_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          previous_tag = os.environ["PREVIOUS_TAG"]
+          readme = Path("README.md")
+          text = readme.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  f"[{previous_tag} release notes](docs/releases/{previous_tag}.md)",
+                  f"[{version} release notes](docs/releases/{version}.md)",
+              ),
+              (
+                  f"PokiNative-{previous_tag}-linux-x86_64.AppImage",
+                  f"PokiNative-{version}-linux-x86_64.AppImage",
+              ),
+          )
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"Expected one README reference to {old!r}, found {count}")
+              text = text.replace(old, new, 1)
+
+          readme.write_text(text, encoding="utf-8", newline="")
+          print(f"Updated README.md release references from {previous_tag} to {version}")
+          PY
+
       - name: Commit and push the release preparation
         shell: bash
         run: |
@@ -137,6 +173,7 @@ jobs:
           git add -- \
             launcher/KarPurLauncher.csproj \
             launcher-linux/KarPurLauncher.Linux.csproj \
+            README.md \
             "docs/releases/$VERSION.md"
 
           if git diff --cached --quiet; then

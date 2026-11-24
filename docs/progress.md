@@ -1,5 +1,16 @@
 # Progress
 
+## Updating README release references during preparation (2026-11-24)
+
+- The release-preparation workflow generated `docs/releases/<version>.md` and changed both launcher project versions, but did not update the README. As a result, after preparing 0.4.6.5, the README still linked to 0.4.6.4 and named the 0.4.6.4 Linux AppImage.
+- Updated [.github/workflows/build.yml](../.github/workflows/build.yml):
+  - Added a step after release-note generation that changes the README's release-note link and Linux AppImage filename from the previous tag to the version being prepared.
+  - The step requires exactly one match for each previous-version reference and fails before commit/push if the README does not match the expected release state.
+  - Added `README.md` to the release-preparation commit, so the generated notes, launcher version metadata, and README references are pushed together.
+- Updated [README.md](../README.md) to link to `docs/releases/0.4.6.5.md` and name the `PokiNative-0.4.6.5-linux-x86_64.AppImage`, aligning the current README with the latest prepared version. Future runs update these references from the previous numeric tag to the requested version.
+- No launcher build or release was run or published as part of this change.
+- Verification: `git diff --check` passed. A local assertion confirmed that both README references occur exactly once and that substituting 0.4.6.5 with a sample next version produces the expected changelog link and Linux AppImage name. The generated release-notes file for 0.4.6.5 exists. No GitHub Actions run was started. Next: commit and push the workflow and README changes on the release-preparation branch; the next manual workflow run should commit the versioned README references with the release preparation.
+
 ## Keeping save staging commits alive through temporary Windows locks (2026-11-24)
 
 - Investigated [issue #45](https://github.com/privacymatters42069-del/PokiNative/issues/45) from the attached `karpur.log`.

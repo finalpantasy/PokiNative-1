@@ -13,8 +13,8 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - name: Check that game content is not in the repository
@@ -38,11 +38,11 @@ jobs:
     needs: validate
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
       - uses: msys2/setup-msys2@v2
@@ -60,7 +60,7 @@ jobs:
       - name: Build Windows launcher
         run: python tools/make_launcher.py
       - name: Upload Windows release files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: launcher-windows
           if-no-files-found: error
@@ -74,11 +74,8 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: "10.0.x"
       - name: Install AppImage and SDL build dependencies
@@ -95,7 +92,7 @@ jobs:
       - name: Build Linux AppImage
         run: python tools/make_appimage.py
       - name: Upload Linux release files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: launcher-linux
           if-no-files-found: error
@@ -110,9 +107,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download all build files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-assets
           merge-multiple: true

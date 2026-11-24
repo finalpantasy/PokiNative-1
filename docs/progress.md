@@ -1,5 +1,22 @@
 # Progress
 
+## Keeping save staging commits alive through temporary Windows locks (2026-11-24)
+
+- Investigated [issue #45](https://github.com/privacymatters42069-del/PokiNative/issues/45) from the attached `karpur.log`.
+- The log contains repeated save Commit failures with the exact message `fs: save commit: cannot finish the staging copy; the newest save is unchanged`. It also records the game completing `team: the game saved`, followed by the runtime refusing to publish each staged save Commit. This is direct evidence of a runtime save-commit failure, not evidence of a launcher settings or export/import failure.
+- The failure occurs while renaming `save-tx/new` to `save-tx/ready-<n>` after the staging copy has been completed. Windows directory locks or antivirus/Explorer scans can make this rename temporarily busy. The previous retry limit allowed only 2 seconds (`MOVE_TRIES = 40` at 50 ms per retry), so a longer lock could cause the Commit to be discarded.
+- Changed [runtime/fs_host.c](runtime/fs_host.c):
+  - Added `STAGING_TRIES = 200`, giving the staging rename up to 10 seconds instead of 2 seconds.
+  - Kept the existing shorter retry policy unchanged for the committed-save swap and backup moves.
+  - Added a staging-directory busy reason to the failure log when the retry is exhausted.
+  - The retry leaves the committed save unchanged until the staging directory can be moved successfully. Rejected or still-locked Commits remain recoverable as before.
+- Verification:
+  - The attached log was downloaded outside the repository and searched for save Commit, unmount, recovery, fatal, and failed lines.
+  - The save-commit path was traced in [runtime/fs_host.c](runtime/fs_host.c), including working-copy creation, staging copy, `ready-*` staging, swap-in, backup rotation, recovery, and `fs_save_flush`.
+  - `git diff --check` and `git diff --stat` passed for the source change. No launcher, build workflow, settings, or export/import code was changed.
+- Limitation: a real gameplay run is required to prove that this 10-second retry fixes issue #45. The issue log does not identify the process holding the staging directory, and no user save or game file was examined or copied into the repository.
+- Next step: build and run one native Windows runtime test with `team: the game saved` followed by repeated saves, then check the log for successful `fs commit save` lines and no `cannot finish the staging copy` lines. Do not publish or package the result until that playtest passes.
+
 ## Changing maintainer-facing language and documentation rules (2026-11-24)
 
 - The maintainer explicitly changed the communication and documentation rules: all maintainer-facing guides and explanations must now be written in English, replacing the previous German-guide requirement.

@@ -192,6 +192,7 @@ static int exists(const char *p) { return plat_fs_kind(p) != PLAT_FS_MISSING; }
 // Rename a directory, durably; retried every 50 ms, tries times in all, while another process (a virus scanner, the
 // indexer) holds a file in it. 0 on success.
 #define MOVE_TRIES 40   // 2 s
+#define STAGING_TRIES 200 // 10 s: antivirus and Explorer scans can briefly hold the staging directory on Windows
 static int move_dir(const char *from, const char *to, int tries) {
     for (int i = 0; i < tries; i++) {
         int e = plat_fs_rename(from, to, 1);
@@ -494,8 +495,11 @@ static uint32_t save_commit_locked(void) {
     }
     char ready[1100];
     snprintf(ready, sizeof ready, "%s/ready-%010u", tx_root, ready_seq + 1);
-    if (move_dir(new_root, ready, MOVE_TRIES)) {
-        rt_log("fs: save commit: cannot finish the staging copy; the newest save is unchanged");
+    if (move_dir(new_root, ready, STAGING_TRIES)) {
+        char why[512];
+        plat_fs_busy_reason(tx_root, why, sizeof why);
+        rt_log("fs: save commit: cannot finish the staging copy (%s); the newest save is unchanged",
+               *why ? why : "the staging directory stays locked");
         remove_tree(new_root);
         return FS_R_INVALID_ARGUMENT;
     }

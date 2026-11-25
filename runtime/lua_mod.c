@@ -251,7 +251,9 @@ static void cmd_sync(const char *s, size_t len) {
     if (slot >= size || !arr || arr >= RT_ADDRESS_LIMIT) return;
     char *tok = buf + used, *colon = strchr(tok, ':');
     int64_t pos = -1;
-    if (!strcmp(tok, "MONITOR_W")) {
+    if (!strcmp(tok, "SLOTS_ON")) {   // menu_mod.lua: the Saves row shows only with TOTK_SAVE_SLOTS=1
+        pos = fs_slots_enabled();
+    } else if (!strcmp(tok, "MONITOR_W")) {
         int w = 0, h = 0;
         pos = gfx_window_monitor_size(&w, &h) ? w : 0;
     } else {
@@ -293,6 +295,9 @@ void lua_mod_command(const char *text, uint64_t n) {
     } else if (len == 13 && !memcmp(cmd, "open_controls", 13)) {
         rt_log("lua mod: PC settings page opens the Controls tab");
         menu_open_controls();
+    } else if (len == 10 && !memcmp(cmd, "open_saves", 10)) {
+        rt_log("lua mod: PC settings page opens the Saves page");
+        menu_open_saves();
     } else if (len > 4 && !memcmp(cmd, "set ", 4)) {
         cmd_set(cmd + 4, len - 4);
     } else if (len > 5 && !memcmp(cmd, "sync ", 5)) {

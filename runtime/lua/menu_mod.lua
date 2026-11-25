@@ -77,6 +77,13 @@ local PC_LABELS = {
   keymap_info = "msg_ui_option_common_07",
   keymap_open = "msg_ui_option_13_info",
 }
+-- Texts of KarPur's own that no label of the game holds: the page asks for them by these made-up labels and the text
+-- fetch below answers with the string itself (English only). The Saves row (TOTK_SAVE_SLOTS=1) uses them.
+local OWN_TEXTS = {
+  karpur_saves = "Saves",
+  karpur_saves_info = "Press left or right to open your saves:\nload one, start a new game beside them, name them.",
+  karpur_saves_open = "Open",
+}
 local ON, OFF = "msg_ui_option_common_01", "msg_ui_option_common_02"   -- the game's own "On" / "Off"
 local GAUGE = "msg_ui_option_volume"                                   -- what the volume gauges show
 
@@ -102,11 +109,31 @@ local PC = {
     labels = { "population_switch", "population_switch2", "population_enhanced", "population_extreme" }, default = 1 },
   -- no setting: left or right shows the Controls page (ui/menu.cpp layout_controls)
   { action = "open_controls", name = "keymap", values = { "", "" }, labels = { "keymap_open", "keymap_open" }, default = 1 },
+  -- only with TOTK_SAVE_SLOTS=1: left or right shows the Saves page (ui/menu.cpp layout_saves)
+  { action = "open_saves", name = "karpur_saves", values = { "", "" },
+    labels = { "karpur_saves_open", "karpur_saves_open" }, default = 1, slots = true },
 }
 
 local function label_of(id)
-  return PC_LABELS[id] or id   -- a PC text id, or one of the game's own labels
+  return PC_LABELS[id] or id   -- a PC text id, or one of the game's own labels (or an OWN_TEXTS label)
 end
+
+-- The entries shown: the Saves row only when the runtime has save slots on.
+local function slots_on()
+  local t = { -2 }
+  local addr = tostring(t):match("(%x+)$")
+  if addr then print("KARPUR_CMD sync " .. addr .. " 0 SLOTS_ON") end
+  return t[1] == 1
+end
+
+local function shown_entries()
+  local on, out = slots_on(), {}
+  for _, e in ipairs(PC) do
+    if not e.slots or on then out[#out + 1] = e end
+  end
+  return out
+end
+local SHOWN = PC   -- the list the page has now (our_list sets it)
 
 local cls = rawget(_G, CLS)
 local proto = type(cls) == "table" and rawget(cls, "prototype")
@@ -123,19 +150,19 @@ local swapped = nil     -- while our list is in the page: { list = the game's li
 local function current_values()
   local slots = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
   local addr = tostring(slots):match("(%x+)$")
-  for i, e in ipairs(PC) do
+  for i, e in ipairs(SHOWN) do
     slots[i] = -2
     if addr and e.key then
       print("KARPUR_CMD sync " .. addr .. " " .. (i - 1) .. " " .. e.key .. ":" .. table.concat(e.values, ","))
     end
   end
-  if addr then print("KARPUR_CMD sync " .. addr .. " " .. #PC .. " MONITOR_W") end
+  if addr then print("KARPUR_CMD sync " .. addr .. " " .. #SHOWN .. " MONITOR_W") end
   local out = {}
-  for i, e in ipairs(PC) do
+  for i, e in ipairs(SHOWN) do
     local pos = slots[i]
     out[i] = (pos >= 0 and pos < #e.values) and pos + 1 or e.default
   end
-  return out, slots[#PC + 1]
+  return out, slots[#SHOWN + 1]
 end
 
 -- A Haxe array (0-based, with a length field) with the metatable of one of the game's.
@@ -148,10 +175,11 @@ local function hx_array(items, like)
 end
 
 local function our_list(game_list)
+  SHOWN = shown_entries()
   local like = rawget(game_list, 0)
   local values, monitor = current_values()
   local entries = {}
-  for i, e in ipairs(PC) do
+  for i, e in ipairs(SHOWN) do
     local labels, count = {}, #e.values
     if e.widths and monitor > 0 then   -- no window size beyond the monitor
       count = 0
@@ -183,7 +211,7 @@ local function swap_in(self)
   local ours, values = our_list(game_list)
   rawset(self, P_ENTRIES, ours)
   swapped = { list = game_list, ours = ours, last = values }
-  print("KARPUR menu_mod: PC settings page opened (" .. #PC .. " entries)")
+  print("KARPUR menu_mod: PC settings page opened (" .. #SHOWN .. " entries)")
 end
 
 local function swap_out(self)
@@ -196,7 +224,7 @@ end
 -- update of the page and when it closes, so a value that changes on another path is not lost.
 local function send_changes()
   if not swapped then return end
-  for i, e in ipairs(PC) do
+  for i, e in ipairs(SHOWN) do
     local entry = rawget(swapped.ours, i - 1)
     local v = type(entry) == "table" and rawget(entry, "numId")
     if type(v) == "number" and v + 1 ~= swapped.last[i] and e.values[v + 1] then
@@ -253,6 +281,7 @@ do
       if pc_mode and file == "appli_header" and label == "appli_header_00_15" then
         return fetch("option", PC_LABELS.title, ...)
       end
+      if type(label) == "string" and OWN_TEXTS[label] then return OWN_TEXTS[label] end
       return fetch(file, label, ...)
     end)
   end
